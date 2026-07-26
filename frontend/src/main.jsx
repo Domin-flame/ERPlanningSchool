@@ -105,7 +105,7 @@ function App() {
           <ShieldCheck aria-hidden="true" />
           <div>
             <h1>CampusWorkflow</h1>
-            <p>Authentification JWT avec roles</p>
+            <p>Portail de gestion universitaire</p>
           </div>
         </div>
 
@@ -124,11 +124,11 @@ function App() {
           <form onSubmit={login} className="form-stack">
             <label>
               Email
-              <input name="email" type="email" defaultValue="admin@campus.local" required />
+              <input name="email" type="email" required />
             </label>
             <label>
               Mot de passe
-              <input name="password" type="password" defaultValue="Admin123!" required />
+              <input name="password" type="password"  required />
             </label>
             <button className="primary-button" type="submit">
               <Lock size={18} />
@@ -143,11 +143,11 @@ function App() {
             </label>
             <label>
               Email
-              <input name="email" type="email" placeholder="vous@campus.local" required />
+              <input name="email" type="email" placeholder="adresse@gmail.com" required />
             </label>
             <label>
               Mot de passe
-              <input name="password" type="password" minLength="6" required />
+              <input name="password" type="password" minLength="8" required />
             </label>
             <label>
               Role
@@ -180,10 +180,7 @@ function App() {
             </p>
             <span className="role-badge">{user.role}</span>
 
-            <div className="token-preview">
-              <span>JWT</span>
-              <code>{token}</code>
-            </div>
+            <h1>Bienvenue sur CampusWorkflow</h1>
 
             <button className="secondary-button" onClick={openAdminPage}>
               <ShieldCheck size={18} />
@@ -193,7 +190,7 @@ function App() {
             <button className="ghost-button" onClick={logout}>Deconnexion</button>
           </div>
         ) : (
-          <p className="empty-state">Connectez-vous avec Admin puis Student pour la demonstration.</p>
+          <p className="empty-state">Connectez-vous pour accéder à votre portail</p>
         )}
       </section>
     </main>
