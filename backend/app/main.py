@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 
 from .database import create_db_and_tables, engine, get_session
-from .models import Token, User, UserCreate, UserLogin, UserRead, UserRole
+from app.models import Token, User, UserCreate, UserLogin, UserRead, UserRole
 from .security import create_access_token, decode_access_token, hash_password, verify_password
 
 
