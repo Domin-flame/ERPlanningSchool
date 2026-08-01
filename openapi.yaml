@@ -1,0 +1,4453 @@
+openapi: 3.1.0
+info:
+  title: Academic Module Service
+  description: Service de gestion du module académique (structure, calendrier, personnes,
+    infrastructure, offres de cours, dossiers pédagogiques).
+  version: 1.0.0
+paths:
+  /faculties/:
+    post:
+      tags:
+      - Academic Structure
+      summary: Create Faculty
+      operationId: create_faculty_faculties__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacultyCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacultyRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Structure
+      summary: List Faculties
+      operationId: list_faculties_faculties__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FacultyRead'
+                title: Response List Faculties Faculties  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /faculties/{faculty_id}:
+    get:
+      tags:
+      - Academic Structure
+      summary: Get Faculty
+      operationId: get_faculty_faculties__faculty_id__get
+      parameters:
+      - name: faculty_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Faculty Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacultyRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Structure
+      summary: Update Faculty
+      operationId: update_faculty_faculties__faculty_id__put
+      parameters:
+      - name: faculty_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Faculty Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FacultyUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacultyRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Structure
+      summary: Delete Faculty
+      operationId: delete_faculty_faculties__faculty_id__delete
+      parameters:
+      - name: faculty_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Faculty Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /departments/:
+    post:
+      tags:
+      - Academic Structure
+      summary: Create Department
+      operationId: create_department_departments__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Structure
+      summary: List Departments
+      operationId: list_departments_departments__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartmentRead'
+                title: Response List Departments Departments  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /departments/{department_id}:
+    get:
+      tags:
+      - Academic Structure
+      summary: Get Department
+      operationId: get_department_departments__department_id__get
+      parameters:
+      - name: department_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Department Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Structure
+      summary: Update Department
+      operationId: update_department_departments__department_id__put
+      parameters:
+      - name: department_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Department Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartmentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Structure
+      summary: Delete Department
+      operationId: delete_department_departments__department_id__delete
+      parameters:
+      - name: department_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Department Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /programs/:
+    post:
+      tags:
+      - Academic Structure
+      summary: Create Program
+      operationId: create_program_programs__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Structure
+      summary: List Programs
+      operationId: list_programs_programs__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProgramRead'
+                title: Response List Programs Programs  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /programs/{program_id}:
+    get:
+      tags:
+      - Academic Structure
+      summary: Get Program
+      operationId: get_program_programs__program_id__get
+      parameters:
+      - name: program_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Program Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Structure
+      summary: Update Program
+      operationId: update_program_programs__program_id__put
+      parameters:
+      - name: program_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Program Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Structure
+      summary: Delete Program
+      operationId: delete_program_programs__program_id__delete
+      parameters:
+      - name: program_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Program Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /modules/:
+    post:
+      tags:
+      - Academic Structure
+      summary: Create Module
+      operationId: create_module_modules__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModuleCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Structure
+      summary: List Modules
+      operationId: list_modules_modules__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModuleRead'
+                title: Response List Modules Modules  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /modules/{module_id}:
+    get:
+      tags:
+      - Academic Structure
+      summary: Get Module
+      operationId: get_module_modules__module_id__get
+      parameters:
+      - name: module_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Module Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Structure
+      summary: Update Module
+      operationId: update_module_modules__module_id__put
+      parameters:
+      - name: module_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Module Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModuleUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Structure
+      summary: Delete Module
+      operationId: delete_module_modules__module_id__delete
+      parameters:
+      - name: module_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Module Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /groups/:
+    get:
+      tags:
+      - Academic Structure
+      summary: List Group Links
+      operationId: list_group_links_groups__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GroupRead'
+                type: array
+                title: Response List Group Links Groups  Get
+    post:
+      tags:
+      - Academic Structure
+      summary: Create Group Link
+      operationId: create_group_link_groups__post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /groups/{program_id}/{module_id}:
+    delete:
+      tags:
+      - Academic Structure
+      summary: Delete Group Link
+      operationId: delete_group_link_groups__program_id___module_id__delete
+      parameters:
+      - name: program_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Program Id
+      - name: module_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Module Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /courses/:
+    post:
+      tags:
+      - Academic Structure
+      summary: Create Course
+      operationId: create_course_courses__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Structure
+      summary: List Courses
+      operationId: list_courses_courses__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseRead'
+                title: Response List Courses Courses  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /courses/{course_id}:
+    get:
+      tags:
+      - Academic Structure
+      summary: Get Course
+      operationId: get_course_courses__course_id__get
+      parameters:
+      - name: course_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Structure
+      summary: Update Course
+      operationId: update_course_courses__course_id__put
+      parameters:
+      - name: course_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Structure
+      summary: Delete Course
+      operationId: delete_course_courses__course_id__delete
+      parameters:
+      - name: course_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /prerequisites/:
+    get:
+      tags:
+      - Academic Structure
+      summary: List Prerequisites
+      operationId: list_prerequisites_prerequisites__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PrerequisiteRead'
+                type: array
+                title: Response List Prerequisites Prerequisites  Get
+    post:
+      tags:
+      - Academic Structure
+      summary: Create Prerequisite
+      operationId: create_prerequisite_prerequisites__post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrerequisiteCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrerequisiteRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /prerequisites/{course_id}/{course_id_1}:
+    delete:
+      tags:
+      - Academic Structure
+      summary: Delete Prerequisite
+      operationId: delete_prerequisite_prerequisites__course_id___course_id_1__delete
+      parameters:
+      - name: course_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Id
+      - name: course_id_1
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Id 1
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /academic-years/:
+    post:
+      tags:
+      - Academic Calendar
+      summary: Create Academic Year
+      operationId: create_academic_year_academic_years__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcademicYearCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcademicYearRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Calendar
+      summary: List Academic Years
+      operationId: list_academic_years_academic_years__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AcademicYearRead'
+                title: Response List Academic Years Academic Years  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /academic-years/{academic_year_id}:
+    get:
+      tags:
+      - Academic Calendar
+      summary: Get Academic Year
+      operationId: get_academic_year_academic_years__academic_year_id__get
+      parameters:
+      - name: academic_year_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Academic Year Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcademicYearRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Calendar
+      summary: Update Academic Year
+      operationId: update_academic_year_academic_years__academic_year_id__put
+      parameters:
+      - name: academic_year_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Academic Year Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcademicYearUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcademicYearRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Calendar
+      summary: Delete Academic Year
+      operationId: delete_academic_year_academic_years__academic_year_id__delete
+      parameters:
+      - name: academic_year_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Academic Year Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /semesters/:
+    post:
+      tags:
+      - Academic Calendar
+      summary: Create Semester
+      operationId: create_semester_semesters__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemesterCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemesterRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Calendar
+      summary: List Semesters
+      operationId: list_semesters_semesters__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SemesterRead'
+                title: Response List Semesters Semesters  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /semesters/{semester_id}:
+    get:
+      tags:
+      - Academic Calendar
+      summary: Get Semester
+      operationId: get_semester_semesters__semester_id__get
+      parameters:
+      - name: semester_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Semester Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemesterRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Calendar
+      summary: Update Semester
+      operationId: update_semester_semesters__semester_id__put
+      parameters:
+      - name: semester_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Semester Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SemesterUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemesterRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Calendar
+      summary: Delete Semester
+      operationId: delete_semester_semesters__semester_id__delete
+      parameters:
+      - name: semester_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Semester Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/:
+    post:
+      tags:
+      - People
+      summary: Create User
+      operationId: create_user_users__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - People
+      summary: List Users
+      operationId: list_users_users__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRead'
+                title: Response List Users Users  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}:
+    get:
+      tags:
+      - People
+      summary: Get User
+      operationId: get_user_users__user_id__get
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - People
+      summary: Update User
+      operationId: update_user_users__user_id__put
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - People
+      summary: Delete User
+      operationId: delete_user_users__user_id__delete
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /teachers/:
+    post:
+      tags:
+      - People
+      summary: Create Teacher
+      operationId: create_teacher_teachers__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - People
+      summary: List Teachers
+      operationId: list_teachers_teachers__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeacherRead'
+                title: Response List Teachers Teachers  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /teachers/{teacher_id}:
+    get:
+      tags:
+      - People
+      summary: Get Teacher
+      operationId: get_teacher_teachers__teacher_id__get
+      parameters:
+      - name: teacher_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Teacher Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - People
+      summary: Update Teacher
+      operationId: update_teacher_teachers__teacher_id__put
+      parameters:
+      - name: teacher_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Teacher Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeacherUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - People
+      summary: Delete Teacher
+      operationId: delete_teacher_teachers__teacher_id__delete
+      parameters:
+      - name: teacher_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Teacher Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /students/:
+    post:
+      tags:
+      - People
+      summary: Create Student
+      operationId: create_student_students__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - People
+      summary: List Students
+      operationId: list_students_students__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StudentRead'
+                title: Response List Students Students  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /students/{student_id}:
+    get:
+      tags:
+      - People
+      summary: Get Student
+      operationId: get_student_students__student_id__get
+      parameters:
+      - name: student_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Student Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - People
+      summary: Update Student
+      operationId: update_student_students__student_id__put
+      parameters:
+      - name: student_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Student Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - People
+      summary: Delete Student
+      operationId: delete_student_students__student_id__delete
+      parameters:
+      - name: student_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Student Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /campuses/:
+    post:
+      tags:
+      - Infrastructure
+      summary: Create Campus
+      operationId: create_campus_campuses__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampusCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Infrastructure
+      summary: List Campuses
+      operationId: list_campuses_campuses__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CampusRead'
+                title: Response List Campuses Campuses  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /campuses/{campus_id}:
+    get:
+      tags:
+      - Infrastructure
+      summary: Get Campus
+      operationId: get_campus_campuses__campus_id__get
+      parameters:
+      - name: campus_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Campus Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Infrastructure
+      summary: Update Campus
+      operationId: update_campus_campuses__campus_id__put
+      parameters:
+      - name: campus_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Campus Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampusUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampusRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Infrastructure
+      summary: Delete Campus
+      operationId: delete_campus_campuses__campus_id__delete
+      parameters:
+      - name: campus_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Campus Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /buildings/:
+    post:
+      tags:
+      - Infrastructure
+      summary: Create Building
+      operationId: create_building_buildings__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildingCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Infrastructure
+      summary: List Buildings
+      operationId: list_buildings_buildings__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BuildingRead'
+                title: Response List Buildings Buildings  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /buildings/{building_id}:
+    get:
+      tags:
+      - Infrastructure
+      summary: Get Building
+      operationId: get_building_buildings__building_id__get
+      parameters:
+      - name: building_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Building Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Infrastructure
+      summary: Update Building
+      operationId: update_building_buildings__building_id__put
+      parameters:
+      - name: building_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Building Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuildingUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BuildingRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Infrastructure
+      summary: Delete Building
+      operationId: delete_building_buildings__building_id__delete
+      parameters:
+      - name: building_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Building Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /rooms/:
+    post:
+      tags:
+      - Infrastructure
+      summary: Create Room
+      operationId: create_room_rooms__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Infrastructure
+      summary: List Rooms
+      operationId: list_rooms_rooms__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoomRead'
+                title: Response List Rooms Rooms  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /rooms/{room_id}:
+    get:
+      tags:
+      - Infrastructure
+      summary: Get Room
+      operationId: get_room_rooms__room_id__get
+      parameters:
+      - name: room_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Room Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Infrastructure
+      summary: Update Room
+      operationId: update_room_rooms__room_id__put
+      parameters:
+      - name: room_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Room Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Infrastructure
+      summary: Delete Room
+      operationId: delete_room_rooms__room_id__delete
+      parameters:
+      - name: room_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Room Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /course-offerings/:
+    post:
+      tags:
+      - Course Offerings
+      summary: Create Course Offering
+      operationId: create_course_offering_course_offerings__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseOfferingCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseOfferingRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Course Offerings
+      summary: List Course Offerings
+      operationId: list_course_offerings_course_offerings__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseOfferingRead'
+                title: Response List Course Offerings Course Offerings  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /course-offerings/{course_offering_id}:
+    get:
+      tags:
+      - Course Offerings
+      summary: Get Course Offering
+      operationId: get_course_offering_course_offerings__course_offering_id__get
+      parameters:
+      - name: course_offering_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Offering Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseOfferingRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Course Offerings
+      summary: Update Course Offering
+      operationId: update_course_offering_course_offerings__course_offering_id__put
+      parameters:
+      - name: course_offering_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Offering Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseOfferingUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseOfferingRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Course Offerings
+      summary: Delete Course Offering
+      operationId: delete_course_offering_course_offerings__course_offering_id__delete
+      parameters:
+      - name: course_offering_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Offering Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /class-schedules/:
+    post:
+      tags:
+      - Course Offerings
+      summary: Create Class Schedule
+      operationId: create_class_schedule_class_schedules__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassScheduleCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassScheduleRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Course Offerings
+      summary: List Class Schedules
+      operationId: list_class_schedules_class_schedules__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassScheduleRead'
+                title: Response List Class Schedules Class Schedules  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /class-schedules/{schedule_id}:
+    get:
+      tags:
+      - Course Offerings
+      summary: Get Class Schedule
+      operationId: get_class_schedule_class_schedules__schedule_id__get
+      parameters:
+      - name: schedule_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Schedule Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassScheduleRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Course Offerings
+      summary: Update Class Schedule
+      operationId: update_class_schedule_class_schedules__schedule_id__put
+      parameters:
+      - name: schedule_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Schedule Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassScheduleUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassScheduleRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Course Offerings
+      summary: Delete Class Schedule
+      operationId: delete_class_schedule_class_schedules__schedule_id__delete
+      parameters:
+      - name: schedule_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Schedule Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /exams/:
+    post:
+      tags:
+      - Course Offerings
+      summary: Create Exam
+      operationId: create_exam_exams__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Course Offerings
+      summary: List Exams
+      operationId: list_exams_exams__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExamRead'
+                title: Response List Exams Exams  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /exams/{exam_id}:
+    get:
+      tags:
+      - Course Offerings
+      summary: Get Exam
+      operationId: get_exam_exams__exam_id__get
+      parameters:
+      - name: exam_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Exam Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Course Offerings
+      summary: Update Exam
+      operationId: update_exam_exams__exam_id__put
+      parameters:
+      - name: exam_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Exam Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExamUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Course Offerings
+      summary: Delete Exam
+      operationId: delete_exam_exams__exam_id__delete
+      parameters:
+      - name: exam_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Exam Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /enrollments/:
+    post:
+      tags:
+      - Academic Records
+      summary: Create Enrollment
+      operationId: create_enrollment_enrollments__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Records
+      summary: List Enrollments
+      operationId: list_enrollments_enrollments__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EnrollmentRead'
+                title: Response List Enrollments Enrollments  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /enrollments/{enrollment_id}:
+    get:
+      tags:
+      - Academic Records
+      summary: Get Enrollment
+      operationId: get_enrollment_enrollments__enrollment_id__get
+      parameters:
+      - name: enrollment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Enrollment Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Records
+      summary: Update Enrollment
+      operationId: update_enrollment_enrollments__enrollment_id__put
+      parameters:
+      - name: enrollment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Enrollment Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnrollmentUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Records
+      summary: Delete Enrollment
+      operationId: delete_enrollment_enrollments__enrollment_id__delete
+      parameters:
+      - name: enrollment_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Enrollment Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /grades/:
+    post:
+      tags:
+      - Academic Records
+      summary: Create Grade
+      operationId: create_grade_grades__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Records
+      summary: List Grades
+      operationId: list_grades_grades__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GradeRead'
+                title: Response List Grades Grades  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /grades/{grade_id}:
+    get:
+      tags:
+      - Academic Records
+      summary: Get Grade
+      operationId: get_grade_grades__grade_id__get
+      parameters:
+      - name: grade_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Grade Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Records
+      summary: Update Grade
+      operationId: update_grade_grades__grade_id__put
+      parameters:
+      - name: grade_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Grade Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GradeUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GradeRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Records
+      summary: Delete Grade
+      operationId: delete_grade_grades__grade_id__delete
+      parameters:
+      - name: grade_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Grade Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /sessions/:
+    post:
+      tags:
+      - Academic Records
+      summary: Create Session
+      operationId: create_session_sessions__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Records
+      summary: List Sessions
+      operationId: list_sessions_sessions__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionRead'
+                title: Response List Sessions Sessions  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /sessions/{session_id}:
+    get:
+      tags:
+      - Academic Records
+      summary: Get Session
+      operationId: get_session_sessions__session_id__get
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Session Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Records
+      summary: Update Session
+      operationId: update_session_sessions__session_id__put
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Session Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Records
+      summary: Delete Session
+      operationId: delete_session_sessions__session_id__delete
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Session Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /attendances/:
+    post:
+      tags:
+      - Academic Records
+      summary: Create Attendance
+      operationId: create_attendance_attendances__post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - Academic Records
+      summary: List Attendances
+      operationId: list_attendances_attendances__get
+      parameters:
+      - name: skip
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+          title: Skip
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 100
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AttendanceRead'
+                title: Response List Attendances Attendances  Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /attendances/{attendance_id}:
+    get:
+      tags:
+      - Academic Records
+      summary: Get Attendance
+      operationId: get_attendance_attendances__attendance_id__get
+      parameters:
+      - name: attendance_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Attendance Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - Academic Records
+      summary: Update Attendance
+      operationId: update_attendance_attendances__attendance_id__put
+      parameters:
+      - name: attendance_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Attendance Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceRead'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - Academic Records
+      summary: Delete Attendance
+      operationId: delete_attendance_attendances__attendance_id__delete
+      parameters:
+      - name: attendance_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Attendance Id
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /:
+    get:
+      tags:
+      - Health
+      summary: Root
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Health
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+components:
+  schemas:
+    AcademicYearCreate:
+      properties:
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+        end_date:
+          type: string
+          format: date
+          title: End Date
+        year_label:
+          type: string
+          title: Year Label
+      type: object
+      required:
+      - start_date
+      - end_date
+      - year_label
+      title: AcademicYearCreate
+    AcademicYearRead:
+      properties:
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+        end_date:
+          type: string
+          format: date
+          title: End Date
+        year_label:
+          type: string
+          title: Year Label
+        academic_year_id:
+          type: integer
+          title: Academic Year Id
+      type: object
+      required:
+      - start_date
+      - end_date
+      - year_label
+      - academic_year_id
+      title: AcademicYearRead
+    AcademicYearUpdate:
+      properties:
+        start_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Start Date
+        end_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: End Date
+        year_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Year Label
+      type: object
+      title: AcademicYearUpdate
+    AttendanceCreate:
+      properties:
+        status:
+          type: string
+          title: Status
+        session_id:
+          type: integer
+          title: Session Id
+        enrollment_id:
+          type: integer
+          title: Enrollment Id
+      type: object
+      required:
+      - status
+      - session_id
+      - enrollment_id
+      title: AttendanceCreate
+    AttendanceRead:
+      properties:
+        status:
+          type: string
+          title: Status
+        session_id:
+          type: integer
+          title: Session Id
+        enrollment_id:
+          type: integer
+          title: Enrollment Id
+        attendance_id:
+          type: integer
+          title: Attendance Id
+      type: object
+      required:
+      - status
+      - session_id
+      - enrollment_id
+      - attendance_id
+      title: AttendanceRead
+    AttendanceUpdate:
+      properties:
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        session_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Session Id
+        enrollment_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Enrollment Id
+      type: object
+      title: AttendanceUpdate
+    BuildingCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        code:
+          type: string
+          title: Code
+        campus_id:
+          type: integer
+          title: Campus Id
+      type: object
+      required:
+      - name
+      - code
+      - campus_id
+      title: BuildingCreate
+    BuildingRead:
+      properties:
+        name:
+          type: string
+          title: Name
+        code:
+          type: string
+          title: Code
+        campus_id:
+          type: integer
+          title: Campus Id
+        building_id:
+          type: integer
+          title: Building Id
+      type: object
+      required:
+      - name
+      - code
+      - campus_id
+      - building_id
+      title: BuildingRead
+    BuildingUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Code
+        campus_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Campus Id
+      type: object
+      title: BuildingUpdate
+    CampusCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        city:
+          type: string
+          title: City
+        adress:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Adress
+      type: object
+      required:
+      - name
+      - city
+      title: CampusCreate
+    CampusRead:
+      properties:
+        name:
+          type: string
+          title: Name
+        city:
+          type: string
+          title: City
+        adress:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Adress
+        campus_id:
+          type: integer
+          title: Campus Id
+      type: object
+      required:
+      - name
+      - city
+      - campus_id
+      title: CampusRead
+    CampusUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        adress:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Adress
+      type: object
+      title: CampusUpdate
+    ClassScheduleCreate:
+      properties:
+        day_of_week:
+          type: string
+          title: Day Of Week
+        start_time:
+          type: string
+          format: time
+          title: Start Time
+        end_time:
+          type: string
+          format: time
+          title: End Time
+        room_id:
+          type: integer
+          title: Room Id
+        course_offering_id:
+          type: integer
+          title: Course Offering Id
+      type: object
+      required:
+      - day_of_week
+      - start_time
+      - end_time
+      - room_id
+      - course_offering_id
+      title: ClassScheduleCreate
+    ClassScheduleRead:
+      properties:
+        day_of_week:
+          type: string
+          title: Day Of Week
+        start_time:
+          type: string
+          format: time
+          title: Start Time
+        end_time:
+          type: string
+          format: time
+          title: End Time
+        room_id:
+          type: integer
+          title: Room Id
+        course_offering_id:
+          type: integer
+          title: Course Offering Id
+        schedule_id:
+          type: integer
+          title: Schedule Id
+      type: object
+      required:
+      - day_of_week
+      - start_time
+      - end_time
+      - room_id
+      - course_offering_id
+      - schedule_id
+      title: ClassScheduleRead
+    ClassScheduleUpdate:
+      properties:
+        day_of_week:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Day Of Week
+        start_time:
+          anyOf:
+          - type: string
+            format: time
+          - type: 'null'
+          title: Start Time
+        end_time:
+          anyOf:
+          - type: string
+            format: time
+          - type: 'null'
+          title: End Time
+        room_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Room Id
+        course_offering_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Course Offering Id
+      type: object
+      title: ClassScheduleUpdate
+    CourseCreate:
+      properties:
+        code:
+          type: string
+          title: Code
+        title:
+          type: string
+          title: Title
+        credits:
+          type: integer
+          title: Credits
+        module_id:
+          type: integer
+          title: Module Id
+      type: object
+      required:
+      - code
+      - title
+      - credits
+      - module_id
+      title: CourseCreate
+    CourseOfferingCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        campus_id:
+          type: integer
+          title: Campus Id
+        teacher_id:
+          type: integer
+          title: Teacher Id
+        course_id:
+          type: integer
+          title: Course Id
+        semester_id:
+          type: integer
+          title: Semester Id
+      type: object
+      required:
+      - name
+      - campus_id
+      - teacher_id
+      - course_id
+      - semester_id
+      title: CourseOfferingCreate
+    CourseOfferingRead:
+      properties:
+        name:
+          type: string
+          title: Name
+        campus_id:
+          type: integer
+          title: Campus Id
+        teacher_id:
+          type: integer
+          title: Teacher Id
+        course_id:
+          type: integer
+          title: Course Id
+        semester_id:
+          type: integer
+          title: Semester Id
+        course_offering_id:
+          type: integer
+          title: Course Offering Id
+      type: object
+      required:
+      - name
+      - campus_id
+      - teacher_id
+      - course_id
+      - semester_id
+      - course_offering_id
+      title: CourseOfferingRead
+    CourseOfferingUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        campus_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Campus Id
+        teacher_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Teacher Id
+        course_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Course Id
+        semester_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Semester Id
+      type: object
+      title: CourseOfferingUpdate
+    CourseRead:
+      properties:
+        code:
+          type: string
+          title: Code
+        title:
+          type: string
+          title: Title
+        credits:
+          type: integer
+          title: Credits
+        module_id:
+          type: integer
+          title: Module Id
+        course_id:
+          type: integer
+          title: Course Id
+      type: object
+      required:
+      - code
+      - title
+      - credits
+      - module_id
+      - course_id
+      title: CourseRead
+    CourseUpdate:
+      properties:
+        code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Code
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        credits:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Credits
+        module_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Module Id
+      type: object
+      title: CourseUpdate
+    DepartmentCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        faculty_id:
+          type: integer
+          title: Faculty Id
+      type: object
+      required:
+      - name
+      - faculty_id
+      title: DepartmentCreate
+    DepartmentRead:
+      properties:
+        name:
+          type: string
+          title: Name
+        faculty_id:
+          type: integer
+          title: Faculty Id
+        department_id:
+          type: integer
+          title: Department Id
+      type: object
+      required:
+      - name
+      - faculty_id
+      - department_id
+      title: DepartmentRead
+    DepartmentUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        faculty_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Faculty Id
+      type: object
+      title: DepartmentUpdate
+    EnrollmentCreate:
+      properties:
+        status:
+          type: string
+          title: Status
+        enrollment_date:
+          type: string
+          format: date
+          title: Enrollment Date
+        student_id:
+          type: integer
+          title: Student Id
+        course_offering_id:
+          type: integer
+          title: Course Offering Id
+      type: object
+      required:
+      - status
+      - enrollment_date
+      - student_id
+      - course_offering_id
+      title: EnrollmentCreate
+    EnrollmentRead:
+      properties:
+        status:
+          type: string
+          title: Status
+        enrollment_date:
+          type: string
+          format: date
+          title: Enrollment Date
+        student_id:
+          type: integer
+          title: Student Id
+        course_offering_id:
+          type: integer
+          title: Course Offering Id
+        enrollment_id:
+          type: integer
+          title: Enrollment Id
+      type: object
+      required:
+      - status
+      - enrollment_date
+      - student_id
+      - course_offering_id
+      - enrollment_id
+      title: EnrollmentRead
+    EnrollmentUpdate:
+      properties:
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        enrollment_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Enrollment Date
+        student_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Student Id
+        course_offering_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Course Offering Id
+      type: object
+      title: EnrollmentUpdate
+    ExamCreate:
+      properties:
+        exam_type:
+          type: string
+          title: Exam Type
+        exam_date:
+          type: string
+          format: date
+          title: Exam Date
+        weight_percentage:
+          anyOf:
+          - type: number
+          - type: string
+          title: Weight Percentage
+        max_score:
+          anyOf:
+          - type: number
+          - type: string
+          title: Max Score
+        course_offering_id:
+          type: integer
+          title: Course Offering Id
+      type: object
+      required:
+      - exam_type
+      - exam_date
+      - weight_percentage
+      - max_score
+      - course_offering_id
+      title: ExamCreate
+    ExamRead:
+      properties:
+        exam_type:
+          type: string
+          title: Exam Type
+        exam_date:
+          type: string
+          format: date
+          title: Exam Date
+        weight_percentage:
+          type: string
+          title: Weight Percentage
+        max_score:
+          type: string
+          title: Max Score
+        course_offering_id:
+          type: integer
+          title: Course Offering Id
+        exam_id:
+          type: integer
+          title: Exam Id
+      type: object
+      required:
+      - exam_type
+      - exam_date
+      - weight_percentage
+      - max_score
+      - course_offering_id
+      - exam_id
+      title: ExamRead
+    ExamUpdate:
+      properties:
+        exam_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Exam Type
+        exam_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Exam Date
+        weight_percentage:
+          anyOf:
+          - type: number
+          - type: string
+          - type: 'null'
+          title: Weight Percentage
+        max_score:
+          anyOf:
+          - type: number
+          - type: string
+          - type: 'null'
+          title: Max Score
+        course_offering_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Course Offering Id
+      type: object
+      title: ExamUpdate
+    FacultyCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        code:
+          type: string
+          title: Code
+      type: object
+      required:
+      - name
+      - code
+      title: FacultyCreate
+    FacultyRead:
+      properties:
+        name:
+          type: string
+          title: Name
+        code:
+          type: string
+          title: Code
+        faculty_id:
+          type: integer
+          title: Faculty Id
+      type: object
+      required:
+      - name
+      - code
+      - faculty_id
+      title: FacultyRead
+    FacultyUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Code
+      type: object
+      title: FacultyUpdate
+    GradeCreate:
+      properties:
+        score:
+          anyOf:
+          - type: number
+          - type: string
+          title: Score
+        letter_grade:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Letter Grade
+        submitted_by:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Submitted By
+        submitted_at:
+          type: string
+          format: date-time
+          title: Submitted At
+        exam_id:
+          type: integer
+          title: Exam Id
+        enrollment_id:
+          type: integer
+          title: Enrollment Id
+      type: object
+      required:
+      - score
+      - submitted_at
+      - exam_id
+      - enrollment_id
+      title: GradeCreate
+    GradeRead:
+      properties:
+        score:
+          type: string
+          title: Score
+        letter_grade:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Letter Grade
+        submitted_by:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Submitted By
+        submitted_at:
+          type: string
+          format: date-time
+          title: Submitted At
+        exam_id:
+          type: integer
+          title: Exam Id
+        enrollment_id:
+          type: integer
+          title: Enrollment Id
+        grade_id:
+          type: integer
+          title: Grade Id
+      type: object
+      required:
+      - score
+      - submitted_at
+      - exam_id
+      - enrollment_id
+      - grade_id
+      title: GradeRead
+    GradeUpdate:
+      properties:
+        score:
+          anyOf:
+          - type: number
+          - type: string
+          - type: 'null'
+          title: Score
+        letter_grade:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Letter Grade
+        submitted_by:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Submitted By
+        submitted_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Submitted At
+        exam_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Exam Id
+        enrollment_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Enrollment Id
+      type: object
+      title: GradeUpdate
+    GroupCreate:
+      properties:
+        program_id:
+          type: integer
+          title: Program Id
+        module_id:
+          type: integer
+          title: Module Id
+      type: object
+      required:
+      - program_id
+      - module_id
+      title: GroupCreate
+    GroupRead:
+      properties:
+        program_id:
+          type: integer
+          title: Program Id
+        module_id:
+          type: integer
+          title: Module Id
+      type: object
+      required:
+      - program_id
+      - module_id
+      title: GroupRead
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    ModuleCreate:
+      properties:
+        code:
+          type: string
+          title: Code
+        title:
+          type: string
+          title: Title
+        credits_ects:
+          type: integer
+          title: Credits Ects
+      type: object
+      required:
+      - code
+      - title
+      - credits_ects
+      title: ModuleCreate
+    ModuleRead:
+      properties:
+        code:
+          type: string
+          title: Code
+        title:
+          type: string
+          title: Title
+        credits_ects:
+          type: integer
+          title: Credits Ects
+        module_id:
+          type: integer
+          title: Module Id
+      type: object
+      required:
+      - code
+      - title
+      - credits_ects
+      - module_id
+      title: ModuleRead
+    ModuleUpdate:
+      properties:
+        code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Code
+        title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title
+        credits_ects:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Credits Ects
+      type: object
+      title: ModuleUpdate
+    PrerequisiteCreate:
+      properties:
+        course_id:
+          type: integer
+          title: Course Id
+        course_id_1:
+          type: integer
+          title: Course Id 1
+      type: object
+      required:
+      - course_id
+      - course_id_1
+      title: PrerequisiteCreate
+    PrerequisiteRead:
+      properties:
+        course_id:
+          type: integer
+          title: Course Id
+        course_id_1:
+          type: integer
+          title: Course Id 1
+      type: object
+      required:
+      - course_id
+      - course_id_1
+      title: PrerequisiteRead
+    ProgramCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        level:
+          type: string
+          title: Level
+        department_id:
+          type: integer
+          title: Department Id
+      type: object
+      required:
+      - name
+      - level
+      - department_id
+      title: ProgramCreate
+    ProgramRead:
+      properties:
+        name:
+          type: string
+          title: Name
+        level:
+          type: string
+          title: Level
+        department_id:
+          type: integer
+          title: Department Id
+        program_id:
+          type: integer
+          title: Program Id
+      type: object
+      required:
+      - name
+      - level
+      - department_id
+      - program_id
+      title: ProgramRead
+    ProgramUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        level:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Level
+        department_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Department Id
+      type: object
+      title: ProgramUpdate
+    RoomCreate:
+      properties:
+        room_number:
+          type: string
+          title: Room Number
+        capacity:
+          type: integer
+          title: Capacity
+        room_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Room Type
+        room_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Room Name
+        building_id:
+          type: integer
+          title: Building Id
+      type: object
+      required:
+      - room_number
+      - capacity
+      - building_id
+      title: RoomCreate
+    RoomRead:
+      properties:
+        room_number:
+          type: string
+          title: Room Number
+        capacity:
+          type: integer
+          title: Capacity
+        room_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Room Type
+        room_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Room Name
+        building_id:
+          type: integer
+          title: Building Id
+        room_id:
+          type: integer
+          title: Room Id
+      type: object
+      required:
+      - room_number
+      - capacity
+      - building_id
+      - room_id
+      title: RoomRead
+    RoomUpdate:
+      properties:
+        room_number:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Room Number
+        capacity:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Capacity
+        room_type:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Room Type
+        room_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Room Name
+        building_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Building Id
+      type: object
+      title: RoomUpdate
+    SemesterCreate:
+      properties:
+        term_name:
+          type: string
+          title: Term Name
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+        end_date:
+          type: string
+          format: date
+          title: End Date
+        is_locked:
+          type: boolean
+          title: Is Locked
+          default: false
+        academic_year_id:
+          type: integer
+          title: Academic Year Id
+      type: object
+      required:
+      - term_name
+      - start_date
+      - end_date
+      - academic_year_id
+      title: SemesterCreate
+    SemesterRead:
+      properties:
+        term_name:
+          type: string
+          title: Term Name
+        start_date:
+          type: string
+          format: date
+          title: Start Date
+        end_date:
+          type: string
+          format: date
+          title: End Date
+        is_locked:
+          type: boolean
+          title: Is Locked
+          default: false
+        academic_year_id:
+          type: integer
+          title: Academic Year Id
+        semester_id:
+          type: integer
+          title: Semester Id
+      type: object
+      required:
+      - term_name
+      - start_date
+      - end_date
+      - academic_year_id
+      - semester_id
+      title: SemesterRead
+    SemesterUpdate:
+      properties:
+        term_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Term Name
+        start_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Start Date
+        end_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: End Date
+        is_locked:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Locked
+        academic_year_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Academic Year Id
+      type: object
+      title: SemesterUpdate
+    SessionCreate:
+      properties:
+        session_date:
+          type: string
+          format: date
+          title: Session Date
+        status:
+          type: string
+          title: Status
+        topic_covered:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Topic Covered
+        schedule_id:
+          type: integer
+          title: Schedule Id
+      type: object
+      required:
+      - session_date
+      - status
+      - schedule_id
+      title: SessionCreate
+    SessionRead:
+      properties:
+        session_date:
+          type: string
+          format: date
+          title: Session Date
+        status:
+          type: string
+          title: Status
+        topic_covered:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Topic Covered
+        schedule_id:
+          type: integer
+          title: Schedule Id
+        session_id:
+          type: integer
+          title: Session Id
+      type: object
+      required:
+      - session_date
+      - status
+      - schedule_id
+      - session_id
+      title: SessionRead
+    SessionUpdate:
+      properties:
+        session_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Session Date
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        topic_covered:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Topic Covered
+        schedule_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Schedule Id
+      type: object
+      title: SessionUpdate
+    StudentCreate:
+      properties:
+        matricule:
+          type: string
+          title: Matricule
+        enrollment_date:
+          type: string
+          format: date
+          title: Enrollment Date
+        status:
+          type: string
+          title: Status
+        program_id:
+          type: integer
+          title: Program Id
+        user_id:
+          type: integer
+          title: User Id
+      type: object
+      required:
+      - matricule
+      - enrollment_date
+      - status
+      - program_id
+      - user_id
+      title: StudentCreate
+    StudentRead:
+      properties:
+        matricule:
+          type: string
+          title: Matricule
+        enrollment_date:
+          type: string
+          format: date
+          title: Enrollment Date
+        status:
+          type: string
+          title: Status
+        program_id:
+          type: integer
+          title: Program Id
+        user_id:
+          type: integer
+          title: User Id
+        student_id:
+          type: integer
+          title: Student Id
+      type: object
+      required:
+      - matricule
+      - enrollment_date
+      - status
+      - program_id
+      - user_id
+      - student_id
+      title: StudentRead
+    StudentUpdate:
+      properties:
+        matricule:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Matricule
+        enrollment_date:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Enrollment Date
+        status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+        program_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Program Id
+        user_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: User Id
+      type: object
+      title: StudentUpdate
+    TeacherCreate:
+      properties:
+        employee_code:
+          type: string
+          title: Employee Code
+        speciality:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Speciality
+        user_id:
+          type: integer
+          title: User Id
+      type: object
+      required:
+      - employee_code
+      - user_id
+      title: TeacherCreate
+    TeacherRead:
+      properties:
+        employee_code:
+          type: string
+          title: Employee Code
+        speciality:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Speciality
+        user_id:
+          type: integer
+          title: User Id
+        teacher_id:
+          type: integer
+          title: Teacher Id
+      type: object
+      required:
+      - employee_code
+      - user_id
+      - teacher_id
+      title: TeacherRead
+    TeacherUpdate:
+      properties:
+        employee_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Employee Code
+        speciality:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Speciality
+        user_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: User Id
+      type: object
+      title: TeacherUpdate
+    UserCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        email:
+          type: string
+          format: email
+          title: Email
+        role:
+          type: string
+          title: Role
+      type: object
+      required:
+      - name
+      - email
+      - role
+      title: UserCreate
+    UserRead:
+      properties:
+        name:
+          type: string
+          title: Name
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        email:
+          type: string
+          format: email
+          title: Email
+        role:
+          type: string
+          title: Role
+        user_id:
+          type: integer
+          title: User Id
+      type: object
+      required:
+      - name
+      - email
+      - role
+      - user_id
+      title: UserRead
+    UserUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        email:
+          anyOf:
+          - type: string
+            format: email
+          - type: 'null'
+          title: Email
+        role:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Role
+      type: object
+      title: UserUpdate
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
