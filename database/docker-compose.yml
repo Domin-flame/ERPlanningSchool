@@ -1,0 +1,166 @@
+version: "3.9"
+
+# =========================================================================
+# Bases de données — un conteneur Postgres 16 par microservice
+# (pattern database-per-service exigé par le sujet SEN4121)
+# =========================================================================
+services:
+
+  identity-db:
+    image: postgres:16-alpine
+    container_name: identity-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: identity_db
+      POSTGRES_USER: ${IDENTITY_DB_SUPERUSER:-identity_super}
+      POSTGRES_PASSWORD: ${IDENTITY_DB_SUPERUSER_PASSWORD}
+      IDENTITY_DB_APP_PASSWORD: ${IDENTITY_DB_APP_PASSWORD}
+      IDENTITY_DB_READONLY_PASSWORD: ${IDENTITY_DB_READONLY_PASSWORD}
+    ports:
+      - "5433:5432"   # exposé pour debug local uniquement — retirer en prod, garder le réseau interne
+    volumes:
+      - identity_db_data:/var/lib/postgresql/data
+      - ./identity-service/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${IDENTITY_DB_SUPERUSER:-identity_super} -d identity_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [erp-backend]
+
+  academic-db:
+    image: postgres:16-alpine
+    container_name: academic-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: academic_db
+      POSTGRES_USER: ${ACADEMIC_DB_SUPERUSER:-academic_super}
+      POSTGRES_PASSWORD: ${ACADEMIC_DB_SUPERUSER_PASSWORD}
+      ACADEMIC_DB_APP_PASSWORD: ${ACADEMIC_DB_APP_PASSWORD}
+      ACADEMIC_DB_CONSUMER_PASSWORD: ${ACADEMIC_DB_CONSUMER_PASSWORD}
+      ACADEMIC_DB_READONLY_PASSWORD: ${ACADEMIC_DB_READONLY_PASSWORD}
+    ports:
+      - "5434:5432"
+    volumes:
+      - academic_db_data:/var/lib/postgresql/data
+      - ./academic-service/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${ACADEMIC_DB_SUPERUSER:-academic_super} -d academic_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [erp-backend]
+
+  finance-db:
+    image: postgres:16-alpine
+    container_name: finance-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: finance_db
+      POSTGRES_USER: ${FINANCE_DB_SUPERUSER:-finance_super}
+      POSTGRES_PASSWORD: ${FINANCE_DB_SUPERUSER_PASSWORD}
+      FINANCE_DB_APP_PASSWORD: ${FINANCE_DB_APP_PASSWORD}
+      FINANCE_DB_CONSUMER_PASSWORD: ${FINANCE_DB_CONSUMER_PASSWORD}
+      FINANCE_DB_READONLY_PASSWORD: ${FINANCE_DB_READONLY_PASSWORD}
+    ports:
+      - "5435:5432"
+    volumes:
+      - finance_db_data:/var/lib/postgresql/data
+      - ./finance-service/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FINANCE_DB_SUPERUSER:-finance_super} -d finance_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [erp-backend]
+
+  hr-db:
+    image: postgres:16-alpine
+    container_name: hr-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hr_db
+      POSTGRES_USER: ${HR_DB_SUPERUSER:-hr_super}
+      POSTGRES_PASSWORD: ${HR_DB_SUPERUSER_PASSWORD}
+      HR_DB_APP_PASSWORD: ${HR_DB_APP_PASSWORD}
+      HR_DB_CONSUMER_PASSWORD: ${HR_DB_CONSUMER_PASSWORD}
+      HR_DB_READONLY_PASSWORD: ${HR_DB_READONLY_PASSWORD}
+    ports:
+      - "5436:5432"
+    volumes:
+      - hr_db_data:/var/lib/postgresql/data
+      - ./hr-service/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${HR_DB_SUPERUSER:-hr_super} -d hr_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [erp-backend]
+
+  # =======================================================================
+  # PLAN D'INTÉGRATION — à décommenter au fur et à mesure que tu ajoutes
+  # les services FastAPI, le broker et le gateway. Structure suggérée :
+  #   backend/
+  #     identity-service/   (FastAPI, port interne 8001)
+  #     academic-service/    (FastAPI, port interne 8002)
+  #     finance-service/     (FastAPI, port interne 8003)
+  #     hr-service/          (FastAPI, port interne 8004)
+  #     gateway/              (Kong / Traefik / FastAPI custom, port 8000 exposé)
+  # =======================================================================
+
+  # rabbitmq:
+  #   image: rabbitmq:3.13-management-alpine
+  #   container_name: erp-broker
+  #   ports:
+  #     - "15672:15672"   # UI admin
+  #     - "5672:5672"     # AMQP
+  #   networks: [erp-backend]
+
+  # identity-service:
+  #   build: ../backend/identity-service
+  #   environment:
+  #     DATABASE_URL: postgresql+psycopg://app_identity_service:${IDENTITY_DB_APP_PASSWORD}@identity-db:5432/identity_db
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+  #   depends_on:
+  #     identity-db: { condition: service_healthy }
+  #     rabbitmq: { condition: service_started }
+  #   networks: [erp-backend]
+
+  # academic-service:
+  #   build: ../backend/academic-service
+  #   environment:
+  #     DATABASE_URL: postgresql+psycopg://app_academic_service:${ACADEMIC_DB_APP_PASSWORD}@academic-db:5432/academic_db
+  #     EVENT_CONSUMER_DATABASE_URL: postgresql+psycopg://app_academic_event_consumer:${ACADEMIC_DB_CONSUMER_PASSWORD}@academic-db:5432/academic_db
+  #     RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+  #   depends_on:
+  #     academic-db: { condition: service_healthy }
+  #   networks: [erp-backend]
+
+  finance-service: 
+    build: ../finance-service
+    container_name: finance-service
+    environment:
+      FINANCE_DATABASE_URL: postgresql://app_finance_service:${FINANCE_DB_APP_PASSWORD}@finance-db:5432/finance_db
+    depends_on:
+      - finance-db
+    networks: [erp-backend]
+    ports:
+      - "8002:8002"
+  # hr-service:       (idem, DATABASE_URL vers hr-db, consumer sur organization_unit_ref)
+
+  # gateway:
+  #   build: ../backend/gateway
+  #   ports:
+  #     - "8000:8000"       # seul point d'entrée exposé au monde extérieur
+  #   depends_on: [identity-service, academic-service, finance-service, hr-service]
+  #   networks: [erp-backend]
+
+networks:
+  erp-backend:
+    driver: bridge
+
+volumes:
+  identity_db_data:
+  academic_db_data:
+  finance_db_data:
+  hr_db_data:
