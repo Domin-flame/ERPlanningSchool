@@ -1,63 +1,70 @@
-# CampusWorkflow Auth Service
+# HR & Admin Service — Module RH de l'ERP scolaire
 
-Projet de démonstration pour le CA : service d'authentification avec FastAPI, React, Docker, mots de passe hachés et JWT.
+Microservice FastAPI + PostgreSQL gérant : employés, paie (CNPS/PAYE), congés,
+et pointage par QR code.
 
-## Convention Git
-
-- Branche principale : `main`
-- Fonctionnalites : `feature/nom-court`
-- Corrections : `fix/nom-court`
-- Documentation : `docs/nom-court`
-
-Exemples :
-
-- `feature/login`
-- `feature/admin-only-page`
-- `fix/jwt-expiration`
-
-## Lancer avec Docker
-
-Depuis la racine du projet :
+## 1. Démarrage rapide
 
 ```bash
-docker compose up --build
+cp .env.example .env
+# édite .env : mets le MÊME JWT_SECRET que le service Auth de ton groupe
+
+docker build -t hr-service .
+docker run --env-file .env -p 8003:8003 hr-service
 ```
 
-Services :
+Documentation Swagger auto-générée : `http://localhost:8003/docs`
+(exigence Week 3 — "documente tes APIs avec OpenAPI/Swagger", FastAPI le fait
+automatiquement à partir du code, aucun fichier YAML à écrire à la main).
 
-- Frontend React : http://localhost:5173
-- Backend FastAPI : http://localhost:8000
-- Documentation API : http://localhost:8000/docs
+## 2. Endpoints principaux (préfixe `/api/v1/hr`)
 
-## Comptes de test
+| Méthode | Route                              | Rôle requis   | Description |
+|---------|-------------------------------------|---------------|-------------|
+| POST    | `/employees/`                       | admin, hr     | Créer un employé |
+| GET     | `/employees/`                       | admin, hr     | Lister les employés |
+| GET     | `/employees/{id}`                   | tous (soi-même ou admin/hr) | Fiche employé |
+| POST    | `/leave/requests`                   | tous          | Demander un congé |
+| PATCH   | `/leave/requests/{id}`              | admin, hr     | Approuver/rejeter |
+| GET     | `/attendance/qr/{employee_id}`      | tous          | Générer le QR de pointage |
+| POST    | `/attendance/scan`                  | tous          | Scanner le QR (check-in/out) |
+| POST    | `/payroll/generate/{employee_id}`   | admin, hr     | Générer le bulletin de paie |
 
-Au demarrage, le backend cree automatiquement :
+## 3. Lien avec les autres semaines (à savoir expliquer à l'oral)
 
-| Role | Email | Mot de passe |
-| --- | --- | --- |
-| Admin | admin@campus.local | Admin123! |
-| Student | student@campus.local | Student123! |
+**Week 1 (Auth) :** ce service ne fait PAS de login. Il reçoit le JWT émis
+par le service Auth dans le header `Authorization: Bearer <token>`, et
+`app/auth.py` le vérifie avec le même secret. Le rôle (`admin`/`hr`/`student`)
+contenu dans le token pilote le RBAC via `require_roles([...])`.
 
-## Endpoints utiles
+**Week 2 (Base de données) :** voir `sql/schema.sql`. Les congés sont dans
+une table séparée (`leave_balances`) plutôt que des colonnes dans
+`employees`, pour respecter la 3NF. Index sur `email`, `department`,
+`(employee_id, date)` pour les recherches fréquentes.
 
-- `POST /auth/register` : inscription
-- `POST /auth/login` : connexion et generation du JWT
-- `GET /auth/me` : utilisateur connecte
-- `GET /admin/secret` : page reservee aux Admins
+**Week 3 (API Gateway) :** ce service tourne sur le port 8003 et n'est PAS
+appelé directement par le frontend — il doit être enregistré dans la
+config du Gateway pour que `/api/v1/hr/*` soit redirigé vers ce conteneur.
+Donne l'URL interne (`http://hr-service:8003`) à la personne qui code le
+Gateway pour qu'elle ajoute la route.
 
-## Explication rapide pour l'examinateur
+## 4. Ce qu'il faut savoir expliquer en évaluation (n'importe quel membre)
 
-Le mot de passe n'est jamais stocke en texte brut. Lors de l'inscription, le backend utilise `bcrypt` pour transformer le mot de passe en empreinte irreversible. Quand l'utilisateur se reconnecte, le backend compare le mot de passe fourni avec cette empreinte.
+1. **Comment le JWT est vérifié** ici sans redemander au service Auth
+   (vérification locale par signature — c'est tout l'intérêt du JWT).
+2. **CNPS/PAYE** : quelle est la différence entre part salariale (retenue
+   sur le salaire) et part patronale (coût pour l'employeur, n'apparaît pas
+   dans le "net à payer"). Voir `payroll_calculator.py`.
+3. **QR code de pointage** : pourquoi il expire après 5 minutes (empêche
+   la triche/réutilisation d'une photo du QR) et pourquoi il est signé
+   (empêche la fabrication d'un faux QR).
+4. **RBAC** : montrer qu'un `student`/employé lambda ne peut pas créer
+   d'employé ni approuver un congé (essaie avec un token du mauvais rôle,
+   ça doit renvoyer 403).
 
-Apres une connexion reussie, le backend cree un JWT signe avec une cle secrete. Ce jeton contient l'identite de l'utilisateur, son email et son role. Quand le frontend appelle une route protegee, il envoie ce JWT dans l'en-tete `Authorization: Bearer ...`. Le backend verifie la signature et sait que le jeton n'a pas ete modifie.
+## 5. Note sur les taux CNPS/PAYE
 
-## Exemple de test live
-
-Si l'examinateur demande : "seuls les Admins peuvent voir cette page", la route backend doit utiliser la dependance `require_admin` :
-
-```python
-@app.get("/admin/secret")
-def admin_secret(current_user: User = Depends(require_admin)):
-    return {"message": "Bienvenue Admin"}
-```
-
+Les taux dans `app/config.py` sont des constantes **configurables**,
+à ajuster si besoin auprès des barèmes officiels CNPS/DGI actuels — ce
+n'est pas un conseil fiscal, juste une base de calcul pédagogique réaliste
+pour le projet.
