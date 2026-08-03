@@ -141,6 +141,14 @@ app.use('/api/auth', (req, res, next) => {
     replayBody(proxyReq, req);
     console.log(`[Gateway] Proxying ${req.method} ${req.originalUrl} -> ${SERVICES.auth}/auth${req.path}`);
   },
+  onProxyRes: (proxyRes, req, res) => {
+    // Annotate the proxied response with which service handled it
+    try {
+      proxyRes.headers['x-handled-by'] = 'auth';
+    } catch (e) {
+      // ignore
+    }
+  },
   onError: (err, req, res) => {
     console.error('[Gateway] Auth Service Error:', err.message);
     res.status(503).json({ detail: 'Auth service unavailable' });
@@ -157,6 +165,9 @@ app.use('/api/academic', verifyToken, createProxyMiddleware({
     forwardUserHeaders(proxyReq, req);
     replayBody(proxyReq, req);
     console.log(`[Gateway] Proxying ${req.method} ${req.path} -> ${SERVICES.academic}${req.path.replace('/api/academic', '')}`);
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    try { proxyRes.headers['x-handled-by'] = 'academic'; } catch (e) {}
   },
   onError: (err, req, res) => {
     console.error('[Gateway] Academic Service Error:', err.message);
@@ -175,6 +186,9 @@ app.use('/api/finance', verifyToken, createProxyMiddleware({
     replayBody(proxyReq, req);
     console.log(`[Gateway] Proxying ${req.method} ${req.path} -> ${SERVICES.finance}${req.path.replace('/api/finance', '')}`);
   },
+  onProxyRes: (proxyRes, req, res) => {
+    try { proxyRes.headers['x-handled-by'] = 'finance'; } catch (e) {}
+  },
   onError: (err, req, res) => {
     console.error('[Gateway] Finance Service Error:', err.message);
     res.status(503).json({ detail: 'Finance service unavailable' });
@@ -191,6 +205,9 @@ app.use('/api/hr', verifyToken, createProxyMiddleware({
     forwardUserHeaders(proxyReq, req);
     replayBody(proxyReq, req);
     console.log(`[Gateway] Proxying ${req.method} ${req.path} -> ${SERVICES.hr}/api/v1/hr${req.path.replace('/api/hr', '')}`);
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    try { proxyRes.headers['x-handled-by'] = 'hr'; } catch (e) {}
   },
   onError: (err, req, res) => {
     console.error('[Gateway] HR Service Error:', err.message);
@@ -210,11 +227,27 @@ app.use('/api/marketing', verifyToken, createProxyMiddleware({
     replayBody(proxyReq, req);
     console.log(`[Gateway] Proxying ${req.method} ${req.path} -> ${SERVICES.finance}${req.path.replace('/api/marketing', '')}`);
   },
+  onProxyRes: (proxyRes, req, res) => {
+    try { proxyRes.headers['x-handled-by'] = 'finance'; } catch (e) {}
+  },
   onError: (err, req, res) => {
     console.error('[Gateway] Marketing Service Error:', err.message);
     res.status(503).json({ detail: 'Marketing service unavailable' });
   }
 }));
+
+// Demo endpoint to trigger rate limiting quickly
+const demoLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // allow 5 requests per minute for demo
+  message: 'Demo rate limit exceeded. Try again later.'
+});
+
+app.get('/api/demo/ratelimit', demoLimiter, (req, res) => {
+  // Indicate this was handled by the gateway itself
+  res.set('X-Handled-By', 'gateway');
+  res.json({ message: 'demo ok', info: 'This response is returned by the gateway (not proxied)' });
+});
 
 // 404 handler
 app.use((req, res) => {

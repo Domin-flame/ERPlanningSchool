@@ -96,6 +96,12 @@ const swaggerSpec = {
           },
         },
       },
+      responseHeaders: {
+        XHandledBy: {
+          description: 'Service that actually handled the request (gateway or backend service name)',
+          schema: { type: 'string' }
+        }
+      },
     },
   },
   security: [
@@ -144,6 +150,44 @@ const swaggerSpec = {
           },
         },
       },
+    },
+    '/api/demo/ratelimit': {
+      get: {
+        tags: ['Demo'],
+        summary: 'Demo rate-limit endpoint',
+        description: 'Endpoint implemented on the gateway to demonstrate rate limiting. Repeated calls will trigger a 429 response when limit exceeded.',
+        responses: {
+          '200': {
+            description: 'OK (handled by gateway)',
+            headers: {
+              'X-Handled-By': {
+                description: 'Service that handled the request',
+                schema: { type: 'string' }
+              }
+            },
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    message: { type: 'string' },
+                    info: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          '429': {
+            description: 'Rate limit exceeded',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ErrorResponse' }
+              }
+            }
+          }
+        },
+        security: []
+      }
     },
     '/api/auth/login': {
       post: {
