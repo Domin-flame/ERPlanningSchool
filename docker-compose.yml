@@ -1,0 +1,205 @@
+services:
+  # PostgreSQL Databases
+  identity-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: identity_db
+      POSTGRES_USER: campus_user
+      POSTGRES_PASSWORD: campus_pass
+    volumes:
+      - identity-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus_user -d identity_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  academic-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: academic_db
+      POSTGRES_USER: campus_user
+      POSTGRES_PASSWORD: campus_pass
+    volumes:
+      - academic-data:/var/lib/postgresql/data
+      - ./postgres/academic_schema_tables.sql:/docker-entrypoint-initdb.d/01_academic_schema.sql:ro
+      - ./postgres/donnees_test_academic.sql:/docker-entrypoint-initdb.d/02_academic_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus_user -d academic_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  finance-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: finance_db
+      POSTGRES_USER: campus_user
+      POSTGRES_PASSWORD: campus_pass
+    volumes:
+      - finance-data:/var/lib/postgresql/data
+      - ./postgres/finance_schema_tables.sql:/docker-entrypoint-initdb.d/01_finance_schema.sql:ro
+      - ./postgres/donnees_test_finance.sql:/docker-entrypoint-initdb.d/02_finance_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus_user -d finance_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hr-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: hr_db
+      POSTGRES_USER: campus_user
+      POSTGRES_PASSWORD: campus_pass
+    volumes:
+      - hr-data:/var/lib/postgresql/data
+      - ./postgres/hr_schema_tables.sql:/docker-entrypoint-initdb.d/01_hr_schema.sql:ro
+      - ./postgres/donnees_test_hr.sql:/docker-entrypoint-initdb.d/02_hr_seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campus_user -d hr_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Microservices
+  auth-service:
+    build: ./module_authentification
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://campus_user:campus_pass@identity-db:5432/identity_db
+      - DATABASE_SCHEMA=public
+      - DB_AUTO_INIT=true
+      - DB_AUTO_SEED=true
+      - JWT_SECRET=your-secret-key-change-in-production
+    depends_on:
+      identity-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  academic-service:
+    build: ./module_academique
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql://campus_user:campus_pass@academic-db:5432/academic_db
+      - DATABASE_SCHEMA=academic
+      - DB_AUTO_INIT=false
+      - DB_AUTO_SEED=false
+      - SERVICE_NAME=academic
+      - PORT=8002
+      - JWT_SECRET=your-secret-key-change-in-production
+    depends_on:
+      academic-db:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  finance-service:
+    build:
+      context: ./module_finance_marketing/finance-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - DATABASE_URL=postgresql://campus_user:campus_pass@finance-db:5432/finance_db
+      - DATABASE_SCHEMA=finance
+      - DB_AUTO_INIT=false
+      - DB_AUTO_SEED=false
+      - SERVICE_NAME=finance
+      - PORT=8003
+      - JWT_SECRET=your-secret-key-change-in-production
+    depends_on:
+      finance-db:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8003
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8003/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hr-service:
+    build: ./module_rh
+    ports:
+      - "8004:8004"
+    environment:
+      - DATABASE_URL=postgresql://campus_user:campus_pass@hr-db:5432/hr_db
+      - DATABASE_SCHEMA=hr
+      - DB_AUTO_INIT=false
+      - DB_AUTO_SEED=false
+      - SERVICE_NAME=hr
+      - PORT=8004
+      - JWT_SECRET=your-secret-key-change-in-production
+    depends_on:
+      hr-db:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8004
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8004/health')\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway (FastAPI / Express)
+  gateway:
+    build: ./gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=your-secret-key-change-in-production
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - ACADEMIC_SERVICE_URL=http://academic-service:8002
+      - FINANCE_SERVICE_URL=http://finance-service:8003
+      - HR_SERVICE_URL=http://hr-service:8004
+      - FRONTEND_URL=http://localhost:5173
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      academic-service:
+        condition: service_healthy
+      finance-service:
+        condition: service_healthy
+      hr-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    depends_on:
+      gateway:
+        condition: service_healthy
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5173"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  identity-data:
+  academic-data:
+  finance-data:
+  hr-data:

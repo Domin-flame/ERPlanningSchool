@@ -1,0 +1,21 @@
+# Dependencies & outputs
+node_modules/
+dist/
+.vite/
+
+# Caches & Environment
+.env
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & Version Control
+.git/
+.gitignore
+.vscode/
+
+# Docs & Tests
+README.md
+Dockerfile

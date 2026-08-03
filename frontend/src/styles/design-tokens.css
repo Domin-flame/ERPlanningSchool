@@ -1,0 +1,308 @@
+/* ============================================================================
+   CampusWorkflow Design Tokens v1.0
+   Complete design system with colors, typography, spacing, shadows
+   ============================================================================ */
+
+:root {
+  /* ─────────────────────────────────────────────────────────────────────
+     PRIMARY COLORS - Brand identity
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-orange: #FF6B00;
+  --cw-orange-light: #FF8A2A;
+  --cw-orange-pale: #FFF3E8;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     SECONDARY COLORS - Navy & Structure
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-navy: #0F2742;
+  --cw-navy-dark: #071827;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     NEUTRALS - Grayscale for UI elements
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-gray-900: #1A1D29;
+  --cw-gray-700: #475569;
+  --cw-gray-600: #64748B;
+  --cw-gray-500: #78828F;
+  --cw-gray-400: #94A3B8;
+  --cw-gray-300: #CBD5E1;
+  --cw-gray-200: #E2E8F0;
+  --cw-gray-100: #F5F7FA;
+  --cw-gray-50: #FAFBFC;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     STATUS COLORS - Semantic meanings
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-success: #22C55E;
+  --cw-success-light: #DCF7E5;
+  --cw-warning: #F59E0B;
+  --cw-warning-light: #FEF3C7;
+  --cw-danger: #EF4444;
+  --cw-danger-light: #FEE2E2;
+  --cw-info: #3B82F6;
+  --cw-info-light: #DBEAFE;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     SEMANTIC COLORS - Contextual usage
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-white: #FFFFFF;
+  --cw-black: #000000;
+  --cw-bg-primary: #F5F7FA;
+  --cw-bg-card: #FFFFFF;
+  --cw-text-primary: #1A1D29;
+  --cw-text-secondary: #64748B;
+  --cw-text-muted: #94A3B8;
+  --cw-border-default: #E2E8F0;
+  --cw-border-hover: #CBD5E1;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     TYPOGRAPHY - Font families and sizing
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-font-primary: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --cw-font-mono: 'Courier New', monospace;
+  
+  /* Font sizes */
+  --cw-text-xs: 0.75rem;       /* 12px */
+  --cw-text-sm: 0.875rem;      /* 14px */
+  --cw-text-base: 1rem;        /* 16px */
+  --cw-text-lg: 1.125rem;      /* 18px */
+  --cw-text-xl: 1.25rem;       /* 20px */
+  --cw-text-2xl: 1.5rem;       /* 24px */
+  --cw-text-3xl: 1.875rem;     /* 30px */
+  --cw-text-4xl: 2rem;         /* 32px */
+  
+  /* Font weights */
+  --cw-font-regular: 400;
+  --cw-font-medium: 500;
+  --cw-font-semibold: 600;
+  --cw-font-bold: 700;
+  
+  /* Line heights */
+  --cw-leading-tight: 1.2;
+  --cw-leading-normal: 1.5;
+  --cw-leading-relaxed: 1.75;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     SPACING SCALE - For margins, padding, gaps
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-space-0: 0;
+  --cw-space-2: 0.125rem;      /* 2px */
+  --cw-space-4: 0.25rem;       /* 4px */
+  --cw-space-6: 0.375rem;      /* 6px */
+  --cw-space-8: 0.5rem;        /* 8px */
+  --cw-space-12: 0.75rem;      /* 12px */
+  --cw-space-16: 1rem;         /* 16px */
+  --cw-space-20: 1.25rem;      /* 20px */
+  --cw-space-24: 1.5rem;       /* 24px */
+  --cw-space-32: 2rem;         /* 32px */
+  --cw-space-40: 2.5rem;       /* 40px */
+  --cw-space-48: 3rem;         /* 48px */
+  --cw-space-64: 4rem;         /* 64px */
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     LAYOUT DIMENSIONS
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-sidebar-expanded: 240px;
+  --cw-sidebar-collapsed: 72px;
+  --cw-header-height: 64px;
+  --cw-topbar-height: 64px;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     BORDER RADIUS - Rounded corners
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-radius-none: 0;
+  --cw-radius-sm: 0.375rem;    /* 6px */
+  --cw-radius-md: 0.5rem;      /* 8px */
+  --cw-radius-lg: 0.75rem;     /* 12px */
+  --cw-radius-xl: 1rem;        /* 16px */
+  --cw-radius-full: 9999px;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     SHADOWS - For depth and emphasis
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-shadow-none: none;
+  --cw-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --cw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --cw-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --cw-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     TRANSITIONS - Animation timing
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-transition-fast: 150ms ease-in-out;
+  --cw-transition-base: 200ms ease-in-out;
+  --cw-transition-slow: 300ms ease-in-out;
+  
+  /* ─────────────────────────────────────────────────────────────────────
+     Z-INDEX STACK - Layering order
+     ───────────────────────────────────────────────────────────────────── */
+  --cw-z-dropdown: 100;
+  --cw-z-sticky: 200;
+  --cw-z-fixed: 300;
+  --cw-z-modal-backdrop: 400;
+  --cw-z-modal: 410;
+  --cw-z-tooltip: 500;
+  --cw-z-notification: 600;
+}
+
+/* ============================================================================
+   BASE STYLES - Global defaults
+   ============================================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--cw-font-primary);
+  font-size: var(--cw-text-base);
+  font-weight: var(--cw-font-regular);
+  line-height: var(--cw-leading-normal);
+  color: var(--cw-text-primary);
+  background-color: var(--cw-bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Text utilities */
+.text-primary {
+  color: var(--cw-text-primary);
+}
+
+.text-secondary {
+  color: var(--cw-text-secondary);
+}
+
+.text-muted {
+  color: var(--cw-text-muted);
+}
+
+.text-success {
+  color: var(--cw-success);
+}
+
+.text-warning {
+  color: var(--cw-warning);
+}
+
+.text-danger {
+  color: var(--cw-danger);
+}
+
+.text-info {
+  color: var(--cw-info);
+}
+
+/* Typography utilities */
+.font-semibold {
+  font-weight: var(--cw-font-semibold);
+}
+
+.font-bold {
+  font-weight: var(--cw-font-bold);
+}
+
+.text-xs {
+  font-size: var(--cw-text-xs);
+}
+
+.text-sm {
+  font-size: var(--cw-text-sm);
+}
+
+.text-base {
+  font-size: var(--cw-text-base);
+}
+
+.text-lg {
+  font-size: var(--cw-text-lg);
+}
+
+.text-xl {
+  font-size: var(--cw-text-xl);
+}
+
+.text-2xl {
+  font-size: var(--cw-text-2xl);
+}
+
+.text-3xl {
+  font-size: var(--cw-text-3xl);
+}
+
+.text-4xl {
+  font-size: var(--cw-text-4xl);
+}
+
+/* Spacing utilities */
+.p-4 { padding: var(--cw-space-16); }
+.p-6 { padding: var(--cw-space-24); }
+.p-8 { padding: var(--cw-space-32); }
+
+.m-4 { margin: var(--cw-space-16); }
+.m-6 { margin: var(--cw-space-24); }
+
+.gap-4 { gap: var(--cw-space-16); }
+.gap-6 { gap: var(--cw-space-24); }
+
+/* Flexbox utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+/* Rounded utilities */
+.rounded-sm {
+  border-radius: var(--cw-radius-sm);
+}
+
+.rounded-md {
+  border-radius: var(--cw-radius-md);
+}
+
+.rounded-lg {
+  border-radius: var(--cw-radius-lg);
+}
+
+.rounded-xl {
+  border-radius: var(--cw-radius-xl);
+}
+
+/* Shadow utilities */
+.shadow-sm {
+  box-shadow: var(--cw-shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--cw-shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--cw-shadow-lg);
+}

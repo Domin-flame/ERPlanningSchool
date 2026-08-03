@@ -1,0 +1,406 @@
+/* ============================================================================
+   CampusWorkflow Styles - Main Index
+   Import all design system files in correct order
+   ============================================================================ */
+
+/* 1. Design tokens (variables, colors, spacing) */
+@import url('./design-tokens.css');
+
+/* 2. Component styles (buttons, cards, badges, etc.) */
+@import url('./components.css');
+
+/* 3. Layout styles (sidebar, header, main layout) */
+@import url('./layout.css');
+
+/* ============================================================================
+   Global Base Styles
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--cw-font-primary);
+  font-size: var(--cw-text-base);
+  line-height: var(--cw-leading-normal);
+  color: var(--cw-text-primary);
+  background-color: var(--cw-bg-primary);
+}
+
+/* ============================================================================
+   Links & Text Elements
+   ============================================================================ */
+
+a {
+  color: var(--cw-orange);
+  text-decoration: none;
+  transition: color var(--cw-transition-base);
+}
+
+a:hover {
+  color: var(--cw-orange-light);
+  text-decoration: underline;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--cw-orange);
+  outline-offset: 2px;
+  border-radius: var(--cw-radius-sm);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: var(--cw-font-bold);
+  line-height: var(--cw-leading-tight);
+}
+
+p {
+  margin: 0;
+}
+
+/* ============================================================================
+   Selection & Highlights
+   ============================================================================ */
+
+::selection {
+  background-color: var(--cw-orange);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--cw-orange);
+  color: white;
+}
+
+/* ============================================================================
+   Utility Classes - Additional
+   ============================================================================ */
+
+/* Display utilities */
+.hidden {
+  display: none !important;
+}
+
+.block {
+  display: block !important;
+}
+
+.inline {
+  display: inline !important;
+}
+
+.inline-block {
+  display: inline-block !important;
+}
+
+/* Position utilities */
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+.fixed {
+  position: fixed;
+}
+
+/* Overflow utilities */
+.overflow-auto {
+  overflow: auto;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+/* Sizing utilities */
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.max-w-full {
+  max-width: 100%;
+}
+
+/* Opacity utilities */
+.opacity-50 {
+  opacity: 0.5;
+}
+
+.opacity-75 {
+  opacity: 0.75;
+}
+
+/* Transform utilities */
+.scale-hover:hover {
+  transform: scale(1.05);
+}
+
+.scale-press:active {
+  transform: scale(0.95);
+}
+
+/* Border utilities */
+.border {
+  border: 1px solid var(--cw-border-default);
+}
+
+.border-t {
+  border-top: 1px solid var(--cw-border-default);
+}
+
+.border-b {
+  border-bottom: 1px solid var(--cw-border-default);
+}
+
+.border-l {
+  border-left: 1px solid var(--cw-border-default);
+}
+
+.border-r {
+  border-right: 1px solid var(--cw-border-default);
+}
+
+/* Background utilities */
+.bg-primary {
+  background-color: var(--cw-bg-primary);
+}
+
+.bg-card {
+  background-color: var(--cw-bg-card);
+}
+
+.bg-gray-50 {
+  background-color: var(--cw-gray-50);
+}
+
+.bg-gray-100 {
+  background-color: var(--cw-gray-100);
+}
+
+.bg-orange-pale {
+  background-color: var(--cw-orange-pale);
+}
+
+/* Cursor utilities */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-default {
+  cursor: default;
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed;
+}
+
+/* Z-index utilities */
+.z-auto {
+  z-index: auto;
+}
+
+.z-0 {
+  z-index: 0;
+}
+
+.z-10 {
+  z-index: 10;
+}
+
+.z-20 {
+  z-index: 20;
+}
+
+.z-dropdown {
+  z-index: var(--cw-z-dropdown);
+}
+
+.z-modal {
+  z-index: var(--cw-z-modal);
+}
+
+/* Animation utilities */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ============================================================================
+   Print Styles
+   ============================================================================ */
+
+@media print {
+  body {
+    background-color: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .sidebar,
+  .header,
+  .header-icons,
+  .page-actions {
+    display: none !important;
+  }
+
+  .main {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    padding: 0;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  a::after {
+    content: '';
+  }
+}
+
+/* ============================================================================
+   Dark Mode Support (Future)
+   ============================================================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* Can be implemented later */
+}
+
+/* ============================================================================
+   Responsive - Large Screens
+   ============================================================================ */
+
+@media (min-width: 1440px) {
+  .main-content {
+    max-width: 1400px;
+  }
+}
+
+/* ============================================================================
+   Responsive - Medium Screens (Tablets)
+   ============================================================================ */
+
+@media (max-width: 1024px) {
+  body {
+    font-size: 15px;
+  }
+}
+
+/* ============================================================================
+   Responsive - Small Screens (Mobile)
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .show-on-mobile {
+    display: block !important;
+  }
+}
+
+/* ============================================================================
+   Focus-visible Polyfill
+   For browsers that don't support :focus-visible
+   ============================================================================ */
+
+.js-focus-visible :focus:not(.focus-visible) {
+  outline: none;
+}
+
+/* ============================================================================
+   Smooth Scroll (if supported)
+   ============================================================================ */
+
+@supports (scroll-behavior: smooth) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ============================================================================
+   Scrollbar Styling (Webkit browsers)
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--cw-gray-300);
+  border-radius: var(--cw-radius-full);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--cw-gray-400);
+}
+
+/* ============================================================================
+   Firefox Scrollbar (Limited support)
+   ============================================================================ */
+
+* {
+  scrollbar-color: var(--cw-gray-300) transparent;
+  scrollbar-width: thin;
+}
+
+/* ============================================================================
+   End of Global Styles
+   ============================================================================ */
