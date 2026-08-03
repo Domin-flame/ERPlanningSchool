@@ -55,16 +55,34 @@ docker run -p 3000:3000 campusworkflow-gateway
 
 ### Public
 - `GET /health` - Health check
+- `GET /api/services/health` - Check backend service health
 
 ### Authentification (pas de token requis)
 - `POST /api/auth/register` → Auth Service
 - `POST /api/auth/login` → Auth Service
+- `POST /api/auth/refresh` → Auth Service
 
 ### Protégé (token JWT requis)
 - `/api/auth/*` → Auth Service
 - `/api/academic/*` → Academic Service
 - `/api/finance/*` → Finance Service
 - `/api/hr/*` → HR Service
+- `/api/marketing/*` → Finance Service
+
+## Swagger / OpenAPI
+
+La documentation Swagger du gateway est disponible à :
+
+- `GET /api/docs` - Swagger UI
+- `GET /api/docs.json` - OpenAPI JSON specification
+
+Le schéma couvre :
+
+- `/health`
+- `/api/services/health`
+- `/api/auth/login`
+- `/api/auth/register`
+- `/api/auth/refresh`
 
 ## Architecture
 
