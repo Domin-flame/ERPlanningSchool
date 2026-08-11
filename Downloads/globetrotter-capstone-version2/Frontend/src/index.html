@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobeTrotter — Assistant de Voyage Premium</title>
+<style>
+  :root{
+    --rose:#F7CBCA;
+    --beige:#DDD5D5;
+    --bg:#F1F7F7;
+    --glacier:#C6D7D8;
+    --sauge:#5D6B6B;
+    --sauge-dark:#3E4A4A;
+    --white:#FFFFFF;
+    --shadow:0 18px 40px rgba(93,107,107,.14);
+    --radius:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg);color:var(--sauge-dark);line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:-.3px}
+  a{color:var(--sauge);text-decoration:none}
+  img{max-width:100%;display:block}
+
+  /* ---------- Layout ---------- */
+  .app{display:flex;min-height:100vh}
+  .sidebar{
+    width:280px;flex-shrink:0;background:var(--white);
+    border-right:1px solid var(--glacier);padding:28px 20px;
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:26px}
+  .brand img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+  .brand h2{font-size:1.25rem;color:var(--sauge-dark)}
+  .brand span{font-size:.72rem;color:var(--sauge);letter-spacing:1.5px;text-transform:uppercase}
+  .nav-item{
+    display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;
+    color:var(--sauge-dark);cursor:pointer;font-weight:500;transition:.2s;border:none;background:transparent;font-size:.95rem;text-align:left;width:100%;
+  }
+  .nav-item:hover{background:var(--bg)}
+  .nav-item.active{background:var(--rose);color:var(--sauge-dark)}
+  .nav-item .ic{width:22px;text-align:center}
+  .sidebar-bottom{margin-top:auto;padding-top:16px;border-top:1px solid var(--glacier)}
+
+  .main{flex:1;padding:32px 40px;max-width:1200px;margin:0 auto;width:100%}
+  .page{display:none;animation:fade .35s ease}
+  .page.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+  .topbar h1{font-size:1.9rem}
+  .topbar p{color:var(--sauge);font-size:.95rem}
+  .user-pill{display:flex;align-items:center;gap:10px;background:var(--white);padding:8px 14px;border-radius:999px;box-shadow:var(--shadow)}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--sauge);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;
+    border-radius:14px;border:none;cursor:pointer;font-weight:600;font-size:.93rem;transition:.2s;font-family:inherit;
+  }
+  .btn-primary{background:var(--sauge);color:#fff}
+  .btn-primary:hover{background:var(--sauge-dark)}
+  .btn-ghost{background:transparent;color:var(--sauge);border:1px solid var(--glacier)}
+  .btn-ghost:hover{background:var(--bg)}
+  .btn-rose{background:var(--rose);color:var(--sauge-dark)}
+  .btn-danger{background:#f3d3d3;color:#9c3b3b}
+  .btn-sm{padding:8px 14px;font-size:.84rem;border-radius:11px}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+
+  /* ---------- Cards / Grid ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
+  .card{
+    background:var(--white);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);
+    transition:.25s;cursor:pointer;position:relative;display:flex;flex-direction:column;
+  }
+  .card:hover{transform:translateY(-4px);box-shadow:0 24px 50px rgba(93,107,107,.2)}
+  .card-img{height:190px;background:var(--beige);position:relative;overflow:hidden}
+  .card-img img{width:100%;height:100%;object-fit:cover}
+  .card-badge{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.92);color:var(--sauge-dark);padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:600}
+  .card-fav{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.92);border:none;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:.2s}
+  .card-fav.active{background:var(--rose)}
+  .card-body{padding:18px;display:flex;flex-direction:column;flex:1}
+  .card-body h3{font-size:1.15rem;margin-bottom:6px}
+  .card-meta{display:flex;gap:12px;align-items:center;font-size:.8rem;color:var(--sauge);margin-bottom:10px}
+  .card-desc{font-size:.88rem;color:var(--sauge-dark);opacity:.85;flex:1}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .tag{background:var(--glacier);color:var(--sauge-dark);padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:500}
+  .card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--beige)}
+  .price{font-weight:700;color:var(--sauge-dark)}
+  .rating{display:flex;align-items:center;gap:4px;color:#c9a227;font-weight:700}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    background:linear-gradient(135deg,var(--rose),var(--glacier));
+    border-radius:var(--radius);padding:44px;margin-bottom:28px;color:var(--sauge-dark);
+  }
+  .hero h1{font-size:2.4rem;margin-bottom:10px}
+  .hero p{max-width:600px;opacity:.9}
+  .searchbar{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+  .searchbar input,.searchbar select{
+    padding:13px 16px;border-radius:13px;border:1px solid rgba(255,255,255,.7);font-size:.95rem;background:#fff;font-family:inherit;outline:none;
+  }
+  .searchbar input[type=text]{flex:1;min-width:220px}
+  .searchbar input:focus,.searchbar select:focus{border-color:var(--sauge)}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(62,74,74,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .modal-overlay.open{display:flex}
+  .modal{
+    background:#fff;border-radius:24px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;padding:28px;box-shadow:0 30px 70px rgba(0,0,0,.3);
+  }
+  .modal h2{font-size:1.5rem;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+  .modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--sauge)}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px;color:var(--sauge)}
+  .form-group input,.form-group textarea,.form-group select{
+    width:100%;padding:12px 14px;border:1px solid var(--glacier);border-radius:12px;font-size:.95rem;font-family:inherit;outline:none;background:#fff;
+  }
+  .form-group input:focus,.form-group textarea:focus{border-color:var(--sauge)}
+  .form-group textarea{min-height:90px;resize:vertical}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+  /* ---------- Detail ---------- */
+  .detail-hero{position:relative;border-radius:var(--radius);overflow:hidden;height:320px;margin-bottom:24px}
+  .detail-hero img{width:100%;height:100%;object-fit:cover}
+  .detail-hero .overlay{position:absolute;inset:0;background:linear-gradient(transparent,rgba(0,0,0,.6));display:flex;align-items:flex-end;padding:28px;color:#fff}
+  .detail-hero h2{font-size:2rem}
+  .detail-section{background:#fff;border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow)}
+  .detail-section h3{font-size:1.2rem;margin-bottom:12px;color:var(--sauge-dark)}
+  .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+  .info-item{background:var(--bg);border-radius:12px;padding:14px}
+  .info-item .k{font-size:.75rem;color:var(--sauge);text-transform:uppercase;letter-spacing:.5px}
+  .info-item .v{font-weight:700;margin-top:4px}
+
+  /* ---------- Reviews ---------- */
+  .review{background:var(--bg);border-radius:14px;padding:16px;margin-bottom:12px}
+  .review .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .review .un{font-weight:600}
+  .review .comment{font-size:.92rem}
+  .stars{color:#c9a227}
+
+  /* ---------- Lists ---------- */
+  .list-item{background:#fff;border-radius:14px;padding:18px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .list-item h3{font-size:1.05rem}
+  .list-item .sub{font-size:.82rem;color:var(--sauge)}
+  .empty{text-align:center;padding:60px 20px;color:var(--sauge)}
+  .empty .big{font-size:3.5rem;margin-bottom:12px}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--sauge-dark);color:#fff;padding:14px 24px;border-radius:14px;font-size:.9rem;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);transition:.4s;z-index:200;opacity:0;pointer-events:none;max-width:90vw;text-align:center;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .toast.error{background:#9c3b3b}
+
+  /* ---------- Auth ---------- */
+  .tabs{display:flex;gap:8px;background:var(--bg);padding:6px;border-radius:14px;margin-bottom:20px}
+  .tab{flex:1;padding:10px;text-align:center;border-radius:11px;cursor:pointer;font-weight:600;font-size:.9rem;border:none;background:transparent;color:var(--sauge)}
+  .tab.active{background:#fff;color:var(--sauge-dark);box-shadow:var(--shadow)}
+
+  /* ---------- Skeleton ---------- */
+  .skeleton{background:linear-gradient(90deg,var(--beige) 25%,#e8eef0 37%,var(--beige) 63%);background-size:400% 100%;animation:shimmer 1.4s infinite;border-radius:var(--radius)}
+  @keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+  .sk-card{height:340px}
+
+  /* ---------- Responsive ---------- */
+  @media(max-width:1024px){
+    .sidebar{width:220px}
+    .main{padding:24px}
+  }
+  @media(max-width:768px){
+    .app{flex-direction:column}
+    .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px 16px}
+    .brand{margin-bottom:0;margin-right:auto}
+    .nav-item{width:auto;padding:10px 12px;font-size:.8rem}
+    .nav-item .txt{display:none}
+    .sidebar-bottom{margin-top:0;padding-top:0;border-top:none}
+    .main{padding:20px 16px}
+    .hero{padding:28px}
+    .hero h1{font-size:1.8rem}
+    .form-row{grid-template-columns:1fr}
+    .detail-hero{height:220px}
+  }
+  @media(max-width:480px){
+    .grid{grid-template-columns:1fr}
+    .topbar h1{font-size:1.5rem}
+    .user-pill span.name{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img src="/assets/logo.png" alt="GlobeTrotter" onerror="this.src='/static/assets/logo.png'">
+      <div>
+        <h2>GlobeTrotter</h2>
+        <span>Voyage Premium</span>
+      </div>
+    </div>
+    <button class="nav-item active" data-page="home"><span class="ic">🏠</span><span class="txt">Accueil</span></button>
+    <button class="nav-item" data-page="explorer"><span class="ic">🧭</span><span class="txt">Explorer</span></button>
+    <button class="nav-item" data-page="reco"><span class="ic">✨</span><span class="txt">Recommandations</span></button>
+    <button class="nav-item" data-page="favorites"><span class="ic">❤️</span><span class="txt">Favoris</span></button>
+    <button class="nav-item" data-page="visited"><span class="ic">📍</span><span class="txt">Visités</span></button>
+    <button class="nav-item" data-page="itineraries"><span class="ic">🗓️</span><span class="txt">Itinéraires</span></button>
+    <button class="nav-item" data-page="proposals"><span class="ic">➕</span><span class="txt">Propositions</span></button>
+    <button class="nav-item" data-page="profile"><span class="ic">👤</span><span class="txt">Profil</span></button>
+    <div class="sidebar-bottom" id="authArea"></div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <main class="main">
+
+    <!-- HOME -->
+    <section class="page active" id="page-home">
+      <div class="hero">
+        <h1>Découvrez librement le monde</h1>
+        <p>GlobeTrotter vous aide à explorer, planifier et partager vos voyages. Parcourez nos destinations, créez des itinéraires et recevez des recommandations personnalisées.</p>
+        <div class="searchbar">
+          <input type="text" id="homeSearch" placeholder="Rechercher une destination…">
+<select id="homeCost" title="Filtrer par budget">
+            <option value="">Budget : tous</option>
+            <option value="50">Jusqu'à 50 €/jour</option>
+            <option value="75">Jusqu'à 75 €/jour</option>
+            <option value="150">Jusqu'à 150 €/jour</option>
+          </select>
+          <button class="btn btn-primary" onclick="goExplorer()">Rechercher</button>
+        </div>
+      </div>
+      <div class="topbar"><div><h2>Destinations populaires</h2><p>Nos plus belles escales</p></div></div>
+      <div class="grid" id="homeGrid"></div>
+    </section>
+
+    <!-- EXPLORER -->
+    <section class="page" id="page-explorer">
+      <div class="topbar">
+        <div><h1>Explorer</h1><p>Filtrez selon vos envies</p></div>
+      </div>
+      <div class="searchbar" style="margin-bottom:24px;background:#fff;padding:16px;border-radius:16px;box-shadow:var(--shadow)">
+        <input type="text" id="exSearch" placeholder="Mot-clé…">
+<select id="exTag" title="Filtrer par style">
+          <option value="">Tous les styles</option>
+          <option value="nature">Nature</option>
+          <option value="culture">Culture</option>
+          <option value="food">Food</option>
+          <option value="beach">Plage</option>
+          <option value="adventure">Aventure</option>
+          <option value="wellness">Bien-être</option>
+          <option value="nightlife">Nightlife</option>
+        </select>
+<select id="exCost" title="Filtrer par budget">
+          <option value="">Budget : tous</option>
+          <option value="50">≤ 50</option>
+          <option value="75">≤ 75</option>
+          <option value="150">≤ 150</option>
+        </select>
+        <button class="btn btn-primary" onclick="loadExplorer()">Filtrer</button>
+      </div>
+      <div class="grid" id="exGrid"></div>
+    </section>
+
+    <!-- RECOMMENDATIONS -->
+    <section class="page" id="page-reco">
+      <div class="topbar">
+        <div><h1>Recommandations</h1><p>Personnalisées selon vos préférences et l'occasion</p></div>
+        <select id="recoOccasion" title="Choisir l'occasion" onchange="loadReco()">
+          <option value="">Occasion : toutes</option>
+          <option value="romantique">Romantique</option>
+          <option value="famille">En famille</option>
+          <option value="amis">Entre amis</option>
+          <option value="solo">Solo</option>
+          <option value="affaires">Affaires</option>
+          <option value="aventure">Aventure</option>
+          <option value="detente">Détente</option>
+          <option value="decouverte">Découverte</option>
+        </select>
+      </div>
+      <div id="recoContent"></div>
+    </section>
+
+    <!-- FAVORITES -->
+    <section class="page" id="page-favorites">
+      <div class="topbar">
+        <div><h1>Mes Favoris</h1><p>Vos destinations sauvegardées</p></div>
+      </div>
+      <div class="grid" id="favGrid"></div>
+    </section>
+
+    <!-- VISITED -->
+    <section class="page" id="page-visited">
+      <div class="topbar">
+        <div><h1>Mes Visités</h1><p>Votre journal de voyage</p></div>
+      </div>
+      <div id="visitedContent"></div>
+    </section>
+
+    <!-- ITINERARIES -->
+    <section class="page" id="page-itineraries">
+      <div class="topbar">
+        <div><h1>Mes Itinéraires</h1><p>Planifiez vos voyages</p></div>
+        <button class="btn btn-primary" onclick="openItineraryModal()">+ Nouvel itinéraire</button>
+      </div>
+      <div id="itinContent"></div>
+    </section>
+
+    <!-- PROPOSALS -->
+    <section class="page" id="page-proposals">
+      <div class="topbar">
+        <div><h1>Propositions</h1><p>Proposez de nouvelles destinations</p></div>
+        <button class="btn btn-primary" onclick="openProposalModal()">+ Proposer</button>
+      </div>
+      <div id="proposalContent"></div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="page" id="page-profile">
+      <div class="topbar">
+        <div><h1>Profil</h1><p>Vos préférences et statistiques</p></div>
+      </div>
+      <div id="profileContent"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ========== MODAL ========== -->
+<div class="modal-overlay" id="modal">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<!-- ========== TOAST ========== -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   GlobeTrotter Web — Single-file frontend consuming Flask API
+   ============================================================ */
+
+const API = '';
+const state = {
+  token: localStorage.getItem('gt_token') || '',
+  username: localStorage.getItem('gt_username') || '',
+  favorites: JSON.parse(localStorage.getItem('gt_favorites') || '[]'),
+  destinations: [],
+  currentUser: null
+};
+
+/* ---------- Helpers ---------- */
+function $(id){return document.getElementById(id)}
+function esc(s){const d=document.createElement('div');d.textContent=s==null?'':String(s);return d.innerHTML}
+function toast(msg,isErr=false){const t=$('toast');t.textContent=msg;t.className='toast show'+(isErr?' error':'');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200)}
+function favImg(d){
+  const img=d.image||'g1.jpg';
+  return '/assets/'+img;
+}
+function stars(r){r=Math.round((r||0)*2)/2;let s='';for(let i=1;i<=5;i++)s+= i<=r?'★':(i-.5<=r?'⯨':'☆');return `<span class="stars">${s} ${esc(r||0)}</span>`}
+function slug(n){return (n||'').toLowerCase().replace(/[^a-z0-9]+/g,'-')}
+
+/* ---------- API requests ---------- */
+async function req(method,path,body){
+  const headers={'Content-Type':'application/json'};
+  if(state.token) headers['Authorization']='Bearer '+state.token;
+  const res=await fetch(API+path,{method,headers,body:body?JSON.stringify(body):undefined});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok){ throw {status:res.status,...data}; }
+  return data;
+}
+
+/* ---------- Auth ---------- */
+function isLoggedIn(){return !!state.token}
+function renderAuthArea(){
+  const area=$('authArea');
+  if(isLoggedIn()){
+    area.innerHTML=`
+      <div class="user-pill" style="box-shadow:none;padding:0;background:none">
+        <div class="avatar">${esc(state.username[0]||'?').toUpperCase()}</div>
+        <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:.9rem">${esc(state.username)}</div><div style="font-size:.72rem;color:var(--sauge)">Connecté</div></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="logout()">Se déconnecter</button>`;
+  }else{
+    area.innerHTML=`<button class="btn btn-primary" style="width:100%" onclick="openAuthModal()">Se connecter</button>`;
+  }
+}
+async function logout(){
+  state.token='';state.username='';localStorage.removeItem('gt_token');localStorage.removeItem('gt_username');
+  renderAuthArea();refreshAll();toast('Déconnecté');openAuthModal();
+}
+function openAuthModal(){
+  $('modal').classList.add('open');
+  $('modalBody').innerHTML=`
+    <h2>Bienvenue <button class="modal-close" onclick="closeModal()">×</button></h2>
+    <div class="tabs">
+      <button class="tab active" id="tabLogin" onclick="switchTab('login')">Connexion</button>
+      <button class="tab" id="tabReg" onclick="switchTab('reg')">Inscription</button>
+    </div>
+    <div id="authForm"></div>`;
+  switchTab('login');
+}
+function switchTab(t){
+  $('tabLogin').classList.toggle('active',t==='login');
+  $('tabReg').classList.toggle('active',t==='reg');
+  if(t==='login'){
+    $('authForm').innerHTML=`
+      <div class="form-group"><label>Nom d'utilisateur</label><input id="loginUser" placeholder="ex: alice"></div>
+      <div class="form-group"><label>Mot de passe</label><input id="loginPass" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Se connecter</button>`;
+  }else{
+    $('authForm').innerHTML=`
+      <div class="form-group"><label>Nom d'utilisateur</label><input id="regUser"></div>
+      <div class="form-group"><label>Mot de passe</label><input id="regPass" type="password"></div>
+      <div class="form-group"><label>Préférences (séparées par virgule)</label><input id="regPref" placeholder="nature, food, beach"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="doRegister()">Créer un compte</button>`;
+  }
+}
+async function doLogin(){
+  const u=$('loginUser').value.trim(),p=$('loginPass').value;
+  if(!u||!p)return toast('Renseignez tous les champs',true);
+  try{
+    const data=await req('POST','/login',{username:u,password:p});
+    state.token=data.token;state.username=u;localStorage.setItem('gt_token',data.token);localStorage.setItem('gt_username',u);
+    closeModal();renderAuthArea();refreshAll();toast('Connecté');
+  }catch(e){toast(e.error||'Erreur de connexion',true)}
+}
+async function doRegister(){
+  const u=$('regUser').value.trim(),p=$('regPass').value,pref=$('regPref').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!u||!p)return toast('Renseignez tous les champs',true);
+  try{
+    await req('POST','/register',{username:u,password:p,preferences:pref});
+    toast('Compte créé, connectez-vous');
+    switchTab('login');$('loginUser').value=u;$('loginPass').value='';
+  }catch(e){toast(e.error||'Erreur',true)}
+}
+
+/* ---------- Navigation ---------- */
+function showPage(name){
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  $('page-'+name).classList.add('active');
+  if(name==='home')loadHome();
+  if(name==='explorer')loadExplorer();
+  if(name==='reco')loadReco();
+  if(name==='favorites')loadFavorites();
+  if(name==='visited')loadVisited();
+  if(name==='itineraries')loadItineraries();
+  if(name==='proposals')loadProposals();
+  if(name==='profile')loadProfile();
+}
+function goExplorer(){$('exSearch').value=$('homeSearch').value;showPage('explorer')}
+document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+
+/* ---------- Modal ---------- */
+function closeModal(){$('modal').classList.remove('open')}
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ---------- Destinations ---------- */
+async function loadDestinations(){
+  try{
+    state.destinations=await req('GET','/destinations');
+    return state.destinations;
+  }catch(e){toast('Erreur chargement destinations',true);return[]}
+}
+function cardHTML(d,showNote=false){
+  const isFav=state.favorites.includes(d.id);
+  return `<div class="card" onclick="openDetail('${esc(d.id)}')">
+    <div class="card-img">
+      <span class="card-badge">${esc(d.category||'')}</span>
+      <img src="${favImg(d)}" alt="${esc(d.name)}" loading="lazy" onerror="this.src='/static/assets/placeholder.jpg'">
+      <button class="card-fav ${isFav?'active':''}" onclick="event.stopPropagation();toggleFav('${esc(d.id)}')">${isFav?'❤️':'🤍'}</button>
+    </div>
+    <div class="card-body">
+      <h3>${esc(d.name)}</h3>
+      <div class="card-meta"><span>📍 ${esc(d.city||d.country||'')}</span>${stars(d.rating)}</div>
+      <div class="card-desc">${esc((d.description||'').slice(0,110))}${(d.description||'').length>110?'…':''}</div>
+      <div class="tags">${(d.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+      <div class="card-foot">
+        <span class="price">${d.avg_cost_per_day?d.avg_cost_per_day+' €/j':'Gratuit'}</span>
+        ${showNote?'<span style="font-size:.8rem">📝 Note</span>':''}
+      </div>
+    </div>
+  </div>`;
+}
+function skeletonGrid(n){let h='';for(let i=0;i<n;i++)h+='<div class="sk-card skeleton"></div>';return h}
+
+async function loadHome(){
+  const grid=$('homeGrid');
+  if(!state.destinations.length){grid.innerHTML=skeletonGrid(6);await loadDestinations();}
+  const sorted=[...state.destinations].sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,6);
+  grid.innerHTML=sorted.map(d=>cardHTML(d)).join('')||emptyHTML('Aucune destination');
+}
+async function loadExplorer(){
+  const q=$('exSearch').value.trim(),tag=$('exTag').value,cost=$('exCost').value;
+  const params=new URLSearchParams();
+  if(q)params.set('q',q);
+  if(tag)params.set('tag',tag);
+  if(cost)params.set('max_cost',cost);
+  $('exGrid').innerHTML=skeletonGrid(6);
+  try{
+    const data=await req('GET','/destinations?'+params.toString());
+    $('exGrid').innerHTML=data.map(d=>cardHTML(d)).join('')||emptyHTML('Aucun résultat');
+  }catch(e){$('exGrid').innerHTML=emptyHTML('Erreur');}
+}
+
+/* ---------- Favorites (localStorage) ---------- */
+function toggleFav(id){
+  if(!isLoggedIn()){toast('Connectez-vous pour ajouter aux favoris',true);openAuthModal();return}
+  const i=state.favorites.indexOf(id);
+  if(i>-1)state.favorites.splice(i,1);else state.favorites.push(id);
+  localStorage.setItem('gt_favorites',JSON.stringify(state.favorites));
+  if($('page-favorites').classList.contains('active'))loadFavorites();
+  else if($('page-home').classList.contains('active'))loadHome();
+  else if($('page-explorer').classList.contains('active'))loadExplorer();
+  toast(i>-1?'Retiré des favoris':'Ajouté aux favoris');
+}
+async function loadFavorites(){
+  const wrap=$('favGrid');
+  if(!isLoggedIn()){wrap.innerHTML=emptyHTML('Connectez-vous pour voir vos favoris','🔒');return}
+  // fetch notes for badge
+  let notes={};
+  try{notes=await req('GET','/favorite-notes')}catch(e){}
+  const favDests=state.destinations.filter(d=>state.favorites.includes(d.id));
+  if(!state.destinations.length){wrap.innerHTML=skeletonGrid(3);await loadDestinations();}
+  const favDests2=state.destinations.filter(d=>state.favorites.includes(d.id));
+  wrap.innerHTML=favDests2.map(d=>cardHTML(d,!!notes[d.name])).join('')||emptyHTML('Aucun favori pour le moment','💔');
+}
+
+/* ---------- Visited ---------- */
+async function loadVisited(){
+  const wrap=$('visitedContent');
+  if(!isLoggedIn()){wrap.innerHTML=emptyHTML('Connectez-vous pour gérer vos visites','📍');return}
+  try{
+    const visited=await req('GET','/visited');
+    if(!state.destinations.length)await loadDestinations();
+    const visitedNames=visited.map(v=>v.toLowerCase());
+    const dests=state.destinations.filter(d=>visitedNames.includes((d.name||'').toLowerCase()));
+    wrap.innerHTML=`
+      <div class="list-item"><div><h3>${esc(visited.length)} destination(s) visitée(s)</h3></div></div>
+      ${dests.map(d=>`
+        <div class="list-item">
+          <div><h3>${esc(d.name)}</h3><div class="sub">${esc(d.country||'')}</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="unmarkVisited('${esc(d.name)}')">Retirer</button>
+        </div>`).join('')}
+      ${dests.length?'':'<div class="empty"><div class="big">🗺️</div><p>Marquez des destinations comme visitées depuis leur fiche</p></div>'}
+    `;
+  }catch(e){wrap.innerHTML=emptyHTML('Erreur','⚠️')}
+}
+async function unmarkVisited(name){
+  try{await req('DELETE','/visited/'+encodeURIComponent(name));toast('Retiré des visites');loadVisited()}catch(e){toast(e.error||'Erreur',true)}
+}
+
+/* ---------- Recommendations ---------- */
+async function loadReco(){
+  const wrap=$('recoContent');
+  if(!isLoggedIn()){wrap.innerHTML=emptyHTML('Connectez-vous pour des recommandations personnalisées','✨')+`<div style="text-align:center"><button class="btn btn-primary" onclick="openAuthModal()">Se connecter</button></div>`;return}
+  wrap.innerHTML=skeletonGrid(5);
+  const occasion=$('recoOccasion')?$('recoOccasion').value:'';
+  const params=new URLSearchParams();
+  params.set('limit',10);
+  if(occasion)params.set('occasion',occasion);
+  try{
+    const data=await req('GET','/recommendations?'+params.toString());
+    wrap.innerHTML=`<div class="grid">${data.map(d=>cardHTML(d)).join('')||emptyHTML('Aucune recommandation')}</div>`;
+  }catch(e){wrap.innerHTML=emptyHTML('Erreur','⚠️')}
+}
+
+/* ---------- Itineraries ---------- */
+async function loadItineraries(){
+  const wrap=$('itinContent');
+  if(!isLoggedIn()){wrap.innerHTML=emptyHTML('Connectez-vous pour gérer vos itinéraires','🗓️');return}
+  try{
+    const its=await req('GET','/itineraries');
+    wrap.innerHTML=its.map(it=>`
+      <div class="list-item">
+        <div style="flex:1">
+          <h3>${esc(it.title)}</h3>
+          <div class="sub">${esc((it.destinations||[]).join(' • ')||'Aucune destination')}</div>
+          <div class="sub">${esc(it.start_date||'')}${it.end_date?' → '+esc(it.end_date):''}</div>
+          ${it.notes?`<div class="sub" style="margin-top:4px">📝 ${esc(it.notes)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="openItineraryModal('${esc(it.id)}','${esc(it.title)}','${esc((it.destinations||[]).join(','))}','${esc(it.start_date||'')}','${esc(it.end_date||'')}','${esc(it.notes||'')}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="delItinerary('${esc(it.id)}')">🗑️</button>
+        </div>
+      </div>`).join('')||emptyHTML('Aucun itinéraire. Créez-en un !','🗓️');
+  }catch(e){wrap.innerHTML=emptyHTML('Erreur','⚠️')}
+}
+function openItineraryModal(id,title,dests,start,end,notes){
+  const destOptions=state.destinations.map(d=>`<option value="${esc(d.name)}">${esc(d.name)}</option>`).join('');
+  $('modal').classList.add('open');
+  $('modalBody').innerHTML=`
+    <h2>${id?'Modifier':'Nouvel'} itinéraire <button class="modal-close" onclick="closeModal()">×</button></h2>
+    <div class="form-group"><label>Titre</label><input id="itTitle" value="${esc(title||'')}" placeholder="Mon voyage au Gabon"></div>
+    <div class="form-group"><label>Destinations (sélection multiple)</label><select id="itDests" multiple style="height:120px">${destOptions}</select></div>
+    <div class="form-row">
+      <div class="form-group"><label>Début</label><input id="itStart" type="date" value="${esc(start||'')}"></div>
+      <div class="form-group"><label>Fin</label><input id="itEnd" type="date" value="${esc(end||'')}"></div>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="itNotes">${esc(notes||'')}</textarea></div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveItinerary('${esc(id||'')}')">${id?'Enregistrer':'Créer'}</button>`;
+  if(dests){const sel=dests.split(',');[...$('itDests').options].forEach(o=>{if(sel.includes(o.value))o.selected=true})}
+}
+async function saveItinerary(id){
+  const title=$('itTitle').value.trim();
+  const dests=[...$('itDests').selectedOptions].map(o=>o.value);
+  if(!title)return toast('Le titre est requis',true);
+  const body={title,destinations:dests,start_date:$('itStart').value,end_date:$('itEnd').value,notes:$('itNotes').value};
+  try{
+    if(id)await req('PUT','/itineraries/'+id,body);else await req('POST','/itineraries',body);
+    closeModal();loadItineraries();toast(id?'Itinéraire modifié':'Itinéraire créé');
+  }catch(e){toast(e.error||'Erreur',true)}
+}
+async function delItinerary(id){
+  if(!confirm('Supprimer cet itinéraire ?'))return;
+  try{await req('DELETE','/itineraries/'+id);loadItineraries();toast('Supprimé')}catch(e){toast(e.error||'Erreur',true)}
+}
+
+/* ---------- Proposals ---------- */
+async function loadProposals(){
+  const wrap=$('proposalContent');
+  if(!isLoggedIn()){wrap.innerHTML=emptyHTML('Connectez-vous pour proposer des destinations','➕');return}
+  try{
+    const props=await req('GET','/proposals');
+    wrap.innerHTML=props.map(p=>`
+      <div class="list-item">
+        <div style="flex:1">
+          <h3>${esc(p.name)} <span class="tag">${esc(p.status)}</span></h3>
+          <div class="sub">${esc(p.country||'')} · ${esc(p.continent||'')}</div>
+          <div class="sub">${esc(p.description||'')}</div>
+          ${p.admin_comment?`<div class="sub" style="margin-top:4px">Admin : ${esc(p.admin_comment)}</div>`:''}
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="delProposal('${esc(p.id)}')">🗑️</button>
+      </div>`).join('')||emptyHTML('Aucune proposition. Proposez une destination !','➕');
+  }catch(e){wrap.innerHTML=emptyHTML('Erreur','⚠️')}
+}
+function openProposalModal(){
+  $('modal').classList.add('open');
+  $('modalBody').innerHTML=`
+    <h2>Proposer une destination <button class="modal-close" onclick="closeModal()">×</button></h2>
+    <div class="form-group"><label>Nom *</label><input id="prName"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Pays *</label><input id="prCountry"></div>
+      <div class="form-group"><label>Continent *</label><input id="prContinent"></div>
+    </div>
+    <div class="form-group"><label>Description *</label><textarea id="prDesc"></textarea></div>
+    <div class="form-group"><label>Tags (virgule)</label><input id="prTags" placeholder="nature, food"></div>
+    <div class="form-group"><label>Coût / jour (€)</label><input id="prCost" type="number" value="50"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="submitProposal()">Envoyer pour validation</button>`;
+}
+async function submitProposal(){
+  const name=$('prName').value.trim(),country=$('prCountry').value.trim(),continent=$('prContinent').value.trim(),desc=$('prDesc').value.trim();
+  if(!name||!country||!continent||!desc)return toast('Champs requis manquants',true);
+  const body={name,country,continent,description:desc,tags:$('prTags').value.split(',').map(s=>s.trim()).filter(Boolean),avg_cost_per_day:parseFloat($('prCost').value)||0};
+  try{
+    await req('POST','/proposals',body);
+    closeModal();loadProposals();toast('Proposition envoyée pour validation');
+  }catch(e){toast(e.error||'Erreur',true)}
+}
+async function delProposal(id){
+  if(!confirm('Supprimer cette proposition ?'))return;
+  try{await req('DELETE','/proposals/'+id);loadProposals();toast('Supprimée')}catch(e){toast(e.error||'Erreur',true)}
+}
+
+/* ---------- Profile ---------- */
+async function loadProfile(){
+  const wrap=$('profileContent');
+  if(!isLoggedIn()){wrap.innerHTML=emptyHTML('Connectez-vous pour voir votre profil','👤');return}
+  let prefs=[];
+  try{const d=await req('GET','/recommendations?limit=1');prefs=(state.currentUser&&state.currentUser.preferences)||[]}catch(e){}
+  // Try to get registered preferences from a fresh login info; fallback to empty
+  wrap.innerHTML=`
+    <div class="detail-section">
+      <h3>Bonjour, ${esc(state.username)} 👋</h3>
+      <p style="color:var(--sauge)">Voici votre espace personnel GlobeTrotter.</p>
+    </div>
+    <div class="detail-section">
+      <h3>Ingrédients de personnalisation</h3>
+      <p style="margin-bottom:14px">Ajoutez des préférences pour des recommandations plus pertinentes (nature, food, beach, culture, adventure, wellness…).</p>
+      <div class="form-group"><label>Préférences (séparées par virgule)</label><input id="profPref" value="${esc(prefs.join(', '))}" placeholder="nature, food"></div>
+      <button class="btn btn-primary" onclick="savePrefs()">Enregistrer</button>
+    </div>
+    <div class="detail-section">
+      <h3>Statistiques</h3>
+      <div class="info-grid">
+        <div class="info-item"><div class="k">Favoris</div><div class="v">${esc(state.favorites.length)}</div></div>
+        <div class="info-item"><div class="k">Destinations</div><div class="v">${esc(state.destinations.length)}</div></div>
+      </div>
+    </div>`;
+}
+async function savePrefs(){
+  const prefs=$('profPref').value.split(',').map(s=>s.trim()).filter(Boolean);
+  try{
+    await req('PUT','/users/me',{preferences:prefs});
+    toast('Préférences enregistrées');
+  }catch(e){toast(e.error||'Erreur',true)}
+}
+
+/* ---------- Detail modal ---------- */
+async function openDetail(id){
+  const d=state.destinations.find(x=>x.id===id);
+  if(!d)return;
+  const isFav=state.favorites.includes(id);
+  let visited=false,note=null;
+  if(isLoggedIn()){
+    try{
+      const v=await req('GET','/visited');visited=v.map(x=>x.toLowerCase()).includes((d.name||'').toLowerCase());
+      note=await req('GET','/favorite-notes/'+encodeURIComponent(d.name));
+      if(!note||Object.keys(note).length===0)note=null;
+    }catch(e){}
+  }
+  let reviews=[];
+  try{reviews=await req('GET','/reviews?destination='+encodeURIComponent(d.name))}catch(e){}
+
+  $('modal').classList.add('open');
+  $('modalBody').innerHTML=`
+    <div class="detail-hero">
+      <img src="${favImg(d)}" alt="${esc(d.name)}" onerror="this.src='/static/assets/placeholder.jpg'">
+      <div class="overlay"><div><h2>${esc(d.name)}</h2><div style="display:flex;gap:14px;align-items:center;margin-top:6px">${stars(d.rating)} <span>📍 ${esc(d.city||'')}, ${esc(d.country||'')}</span></div></div></div>
+    </div>
+    <div class="detail-section">
+      <p>${esc(d.description||'')}</p>
+      <div class="tags" style="margin-top:14px">${(d.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section">
+      <h3>Informations pratiques</h3>
+      <div class="info-grid">
+        <div class="info-item"><div class="k">Coût / jour</div><div class="v">${d.avg_cost_per_day?d.avg_cost_per_day+' €':'Gratuit'}</div></div>
+        <div class="info-item"><div class="k">Catégorie</div><div class="v">${esc(d.category||'')}</div></div>
+        <div class="info-item"><div class="k">Continent</div><div class="v">${esc(d.continent||'')}</div></div>
+        <div class="info-item"><div class="k">Note</div><div class="v">${stars(d.rating)}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>Actions</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn ${isFav?'btn-rose':'btn-primary'}" onclick="toggleFav('${esc(id)}');closeModal()">${isFav?'Retirer des favoris':'❤️ Ajouter aux favoris'}</button>
+        <button class="btn ${visited?'btn-rose':'btn-ghost'}" onclick="toggleVisited('${esc(d.name)}','${esc(id)}')">${visited?'✓ Visité':'📍 Marquer visité'}</button>
+        ${isLoggedIn()?`<button class="btn btn-ghost" onclick="openNoteModal('${esc(d.name)}')">📝 ${note?'Modifier ma note':'Ajouter une note'}</button>`:''}
+      </div>
+    </div>
+    <div class="detail-section">
+      <h3>Avis (${esc(reviews.length)})</h3>
+      ${reviews.map(r=>`
+        <div class="review">
+          <div class="top"><span class="un">${esc(r.username)}</span>${stars(r.rating)}</div>
+          <div class="comment">${esc(r.comment)}</div>
+        </div>`).join('')||'<div class="empty" style="padding:20px"><div class="big">💬</div><p>Aucun avis pour le moment</p></div>'}
+      ${isLoggedIn()?`
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--glacier)">
+          <div class="form-group"><label>Votre note (1-5)</label><input id="revRating" type="number" min="1" max="5" value="5"></div>
+          <div class="form-group"><label>Votre avis</label><textarea id="revComment"></textarea></div>
+          <button class="btn btn-primary" onclick="addReview('${esc(d.name)}')">Publier mon avis</button>
+        </div>`:''}
+    </div>`;
+}
+async function toggleVisited(name,id){
+  if(!isLoggedIn()){toast('Connectez-vous',true);openAuthModal();return}
+  try{
+    const v=await req('GET','/visited');
+    const isV=v.map(x=>x.toLowerCase()).includes((name||'').toLowerCase());
+    if(isV)await req('DELETE','/visited/'+encodeURIComponent(name));
+    else await req('POST','/visited',{destination_name:name});
+    toast(isV?'Retiré des visites':'Marqué comme visité');
+    openDetail(id);
+  }catch(e){toast(e.error||'Erreur',true)}
+}
+async function addReview(name){
+  const rating=parseInt($('revRating').value),comment=$('revComment').value.trim();
+  if(!rating||!comment)return toast('Remplissez note et avis',true);
+  try{await req('POST','/reviews',{destination_name:name,rating,comment});toast('Avis publié');openDetail(name&&state.destinations.find(d=>d.name===name)?.id||'')}catch(e){toast(e.error||'Erreur',true)}
+}
+function openNoteModal(name){
+  $('modal').classList.add('open');
+  $('modalBody').innerHTML=`
+    <h2>Note pour ${esc(name)} <button class="modal-close" onclick="closeModal()">×</button></h2>
+    <div class="form-group"><label>Ma note</label><textarea id="noteText"></textarea></div>
+    <div class="form-group"><label>Date de visite</label><input id="noteDate" type="date"></div>
+    <div class="form-group"><label>Compagnons</label><input id="noteComp" placeholder="ex: en famille"></div>
+    <div class="form-group"><label>Budget prévu (€)</label><input id="noteBudget" type="number"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="saveNote('${esc(name)}')">Enregistrer la note</button>`;
+}
+async function saveNote(name){
+  const body={destination_name:name,note:$('noteText').value,visit_date:$('noteDate').value,companions:$('noteComp').value,budget:parseFloat($('noteBudget').value)||null};
+  try{await req('POST','/favorite-notes',body);closeModal();toast('Note enregistrée');if($('page-favorites').classList.contains('active'))loadFavorites()}catch(e){toast(e.error||'Erreur',true)}
+}
+
+/* ---------- Empty state ---------- */
+function emptyHTML(msg,icon='✈️'){return `<div class="empty"><div class="big">${icon}</div><p>${esc(msg)}</p></div>`}
+
+/* ---------- refresh all ---------- */
+function refreshAll(){
+  if($('page-home').classList.contains('active'))loadHome();
+  if($('page-favorites').classList.contains('active'))loadFavorites();
+  if($('page-reco').classList.contains('active'))loadReco();
+}
+
+/* ---------- Init ---------- */
+(async function init(){
+  renderAuthArea();
+  await loadDestinations();
+  loadHome();
+})();
+</script>
+</body>
+</html>

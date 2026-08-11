@@ -1,0 +1,22 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.0, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\GSI\Downloads\globetrotter-capstone-version2\.venv-test\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\GSI\Downloads\globetrotter-capstone-version2
+plugins: anyio-4.14.2
+collecting ... collected 7 items
+
+tests/test_recommendations.py::test_canonical_occasion_handles_accents PASSED [ 14%]
+tests/test_recommendations.py::test_is_libreville_filters PASSED         [ 28%]
+tests/test_recommendations.py::test_preferences_drive_scoring PASSED     [ 42%]
+tests/test_recommendations.py::test_occasion_personalisation PASSED      [ 57%]
+tests/test_recommendations.py::test_libreville_focus_default_and_city_all PASSED [ 71%]
+tests/test_recommendations.py::test_empty_preferences_still_returns_ordered_list PASSED [ 85%]
+tests/test_recommendations.py::test_limit_respected_and_response_shape PASSED [100%]
+
+============================== warnings summary ===============================
+.venv-test\Lib\site-packages\aio_pika\abc.py:41
+  C:\Users\GSI\Downloads\globetrotter-capstone-version2\.venv-test\Lib\site-packages\aio_pika\abc.py:41: DeprecationWarning: datetime.datetime.utcfromtimestamp() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+    ZERO_TIME = datetime.utcfromtimestamp(0)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 7 passed, 1 warning in 21.91s ========================
