@@ -6,14 +6,14 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.crud import CRUDBase
 from app.database import get_db
-from app.routers.offerings import class_schedule_crud, course_offering_crud, exam_crud
+from app.auth import get_current_user, require_role, CurrentUser
+from app.routers.offerings import course_offering_crud, exam_crud
 from app.routers.people import student_crud
 
 router = APIRouter(tags=["Academic Records"])
 
 enrollment_crud = CRUDBase(models.Enrollment, "enrollment_id")
 grade_crud = CRUDBase(models.Grade, "grade_id")
-session_crud = CRUDBase(models.ClassSession, "session_id")
 attendance_crud = CRUDBase(models.Attendance, "attendance_id")
 
 
@@ -72,7 +72,11 @@ def delete_enrollment(enrollment_id: int, db: Session = Depends(get_db)):
 # Grade
 # ---------------------------------------------------------------------------
 @router.post("/grades/", response_model=schemas.GradeRead, status_code=status.HTTP_201_CREATED)
-def create_grade(payload: schemas.GradeCreate, db: Session = Depends(get_db)):
+def create_grade(
+    payload: schemas.GradeCreate,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role(["teacher", "admin"])),
+):
     if not exam_crud.get(db, payload.exam_id):
         raise HTTPException(status_code=404, detail="Examen introuvable")
     if not enrollment_crud.get(db, payload.enrollment_id):
@@ -81,20 +85,46 @@ def create_grade(payload: schemas.GradeCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/grades/", response_model=List[schemas.GradeRead])
-def list_grades(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def list_grades(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    # Students may only see their own grades; teachers/admins can list all
+    if current_user.role == "student":
+        # find grades where enrollment.student matches current user's student_id/user_id
+        q = (
+            db.query(models.Grade)
+            .join(models.Enrollment, models.Grade.enrollment_id == models.Enrollment.enrollment_id)
+            .join(models.Student, models.Enrollment.student_id == models.Student.student_id)
+            .filter(
+                (models.Student.user_id == current_user.user_id)
+                | (models.Student.student_id == current_user.student_id)
+            )
+            .limit(limit)
+            .offset(skip)
+        )
+        return q.all()
     return grade_crud.get_multi(db, skip, limit)
 
 
 @router.get("/grades/{grade_id}", response_model=schemas.GradeRead)
-def get_grade(grade_id: int, db: Session = Depends(get_db)):
+def get_grade(grade_id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
     obj = grade_crud.get(db, grade_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Note introuvable")
+    # If requester is student, ensure they own this grade
+    if current_user.role == "student":
+        enrollment = db.query(models.Enrollment).get(obj.enrollment_id)
+        student = db.query(models.Student).get(enrollment.student_id) if enrollment else None
+        if not student or not (student.user_id == current_user.user_id or student.student_id == current_user.student_id):
+            raise HTTPException(status_code=403, detail="Accès interdit")
     return obj
 
 
 @router.put("/grades/{grade_id}", response_model=schemas.GradeRead)
-def update_grade(grade_id: int, payload: schemas.GradeUpdate, db: Session = Depends(get_db)):
+def update_grade(
+    grade_id: int,
+    payload: schemas.GradeUpdate,
+    db: Session = Depends(get_db),
+    current_user: CurrentUser = Depends(require_role(["teacher", "admin"])),
+):
     obj = grade_crud.get(db, grade_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Note introuvable")
@@ -102,50 +132,24 @@ def update_grade(grade_id: int, payload: schemas.GradeUpdate, db: Session = Depe
 
 
 @router.delete("/grades/{grade_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_grade(grade_id: int, db: Session = Depends(get_db)):
+def delete_grade(grade_id: int, db: Session = Depends(get_db), current_user: CurrentUser = Depends(require_role(["teacher", "admin"]))):
     obj = grade_crud.get(db, grade_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Note introuvable")
     grade_crud.remove(db, grade_id)
 
 
-# ---------------------------------------------------------------------------
-# Session (séance de cours)
-# ---------------------------------------------------------------------------
-@router.post("/sessions/", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED)
-def create_session(payload: schemas.SessionCreate, db: Session = Depends(get_db)):
-    if not class_schedule_crud.get(db, payload.schedule_id):
-        raise HTTPException(status_code=404, detail="Créneau introuvable")
-    return session_crud.create(db, payload.model_dump())
-
-
-@router.get("/sessions/", response_model=List[schemas.SessionRead])
-def list_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return session_crud.get_multi(db, skip, limit)
-
-
-@router.get("/sessions/{session_id}", response_model=schemas.SessionRead)
-def get_session(session_id: int, db: Session = Depends(get_db)):
-    obj = session_crud.get(db, session_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Séance introuvable")
-    return obj
-
-
-@router.put("/sessions/{session_id}", response_model=schemas.SessionRead)
-def update_session(session_id: int, payload: schemas.SessionUpdate, db: Session = Depends(get_db)):
-    obj = session_crud.get(db, session_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Séance introuvable")
-    return session_crud.update(db, obj, payload.model_dump(exclude_unset=True))
-
-
-@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_session(session_id: int, db: Session = Depends(get_db)):
-    obj = session_crud.get(db, session_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Séance introuvable")
-    session_crud.remove(db, session_id)
+@router.get("/me/grades", response_model=List[schemas.GradeRead])
+def my_grades(db: Session = Depends(get_db), current_user: CurrentUser = Depends(get_current_user)):
+    if current_user.role != "student":
+        raise HTTPException(status_code=403, detail="Accessible uniquement aux étudiants")
+    q = (
+        db.query(models.Grade)
+        .join(models.Enrollment, models.Grade.enrollment_id == models.Enrollment.enrollment_id)
+        .join(models.Student, models.Enrollment.student_id == models.Student.student_id)
+        .filter((models.Student.user_id == current_user.user_id) | (models.Student.student_id == current_user.student_id))
+    )
+    return q.all()
 
 
 # ---------------------------------------------------------------------------
@@ -153,8 +157,7 @@ def delete_session(session_id: int, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 @router.post("/attendances/", response_model=schemas.AttendanceRead, status_code=status.HTTP_201_CREATED)
 def create_attendance(payload: schemas.AttendanceCreate, db: Session = Depends(get_db)):
-    if not session_crud.get(db, payload.session_id):
-        raise HTTPException(status_code=404, detail="Séance introuvable")
+    # SQL Attendance stores session_date and enrollment_id
     if not enrollment_crud.get(db, payload.enrollment_id):
         raise HTTPException(status_code=404, detail="Inscription introuvable")
     return attendance_crud.create(db, payload.model_dump())

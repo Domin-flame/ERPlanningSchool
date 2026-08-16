@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+
+//  a quoi sert l'accordion dans le code 
 /**
  * Accordéon vertical : header cliquable avec titre + chevron, contenu dépliable.
  */

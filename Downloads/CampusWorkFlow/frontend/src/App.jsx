@@ -5,24 +5,24 @@ import { DataProvider } from "./context/DataContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Layout from "./components/Layout.jsx";
 
-import Splash from "./pages/Splash.jsx";
-import Login from "./pages/Login.jsx";
-import Onboarding from "./pages/Onboarding.jsx";
+import Splash from "./pages/auth/Splash.jsx";
+import Login from "./pages/auth/Login.jsx";
+import Onboarding from "./pages/auth/Onboarding.jsx";
 
-import Dashboard from "./pages/Dashboard.jsx";
-import TeacherDashboard from "./pages/TeacherDashboard.jsx";
-import StudentDashboard from "./pages/StudentDashboard.jsx";
-import MarketingDashboard from "./pages/MarketingDashboard.jsx";
-import HR from "./pages/HR.jsx";
-import Finance from "./pages/Finance.jsx";
+import Dashboard from "./pages/academic/Dashboard.jsx";
+import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
+import StudentDashboard from "./pages/student/StudentDashboard.jsx";
+import MarketingDashboard from "./pages/finance/MarketingDashboard.jsx";
+import HR from "./pages/rh/HR.jsx";
+import Finance from "./pages/finance/Finance.jsx";
 
-import Students from "./pages/Students.jsx";
-import Courses from "./pages/Courses.jsx";
-import Calendar from "./pages/Calendar.jsx";
-import Messages from "./pages/Messages.jsx";
-import Analytics from "./pages/Analytics.jsx";
-import Settings from "./pages/Settings.jsx";
-import Forbidden from "./pages/Forbidden.jsx";
+import Students from "./pages/academic/Students.jsx";
+import Courses from "./pages/general/Courses.jsx";
+import Calendar from "./pages/general/Calendar.jsx";
+import Messages from "./pages/message/Messages.jsx";
+import Analytics from "./pages/general/Analytics.jsx";
+import Settings from "./pages/auth/Settings.jsx";
+import Forbidden from "./pages/general/Forbidden.jsx";
 
 /**
  * Retourne le dashboard home pour le rôle connecté.
@@ -147,10 +147,18 @@ function MainRoutes() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = React.useState(true);
+
+  React.useEffect(() => {
+    // Show splash for 2.5 seconds on startup
+    const timer = setTimeout(() => setShowSplash(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <AuthProvider>
       <DataProvider>
-        <MainRoutes />
+        {showSplash ? <Splash /> : <MainRoutes />}
       </DataProvider>
     </AuthProvider>
   );

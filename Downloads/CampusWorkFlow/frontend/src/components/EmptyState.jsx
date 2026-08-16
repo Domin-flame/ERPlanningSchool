@@ -1,5 +1,5 @@
 import React from "react";
-import FoxMascot from "./FoxMascot.jsx";
+import { Inbox } from "lucide-react";
 
 /**
  * État vide pour listes sans données.
@@ -27,8 +27,8 @@ export default function EmptyState({
         {icon ? (
           <div style={{ fontSize: 56, marginBottom: 12 }}>{icon}</div>
         ) : (
-          <div className="mascot" style={{ marginBottom: 12 }}>
-            <FoxMascot size={80} />
+          <div className="mascot" style={{ marginBottom: 12, color: "var(--brand-dark)" }}>
+            <Inbox size={56} strokeWidth={1.8} />
           </div>
         )}
         <h2 style={{ margin: "0 0 8px" }}>{title}</h2>

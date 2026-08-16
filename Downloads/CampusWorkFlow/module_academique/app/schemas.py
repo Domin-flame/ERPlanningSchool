@@ -10,7 +10,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 # ---------------------------------------------------------------------------
 class FacultyBase(BaseModel):
     name: str
-    code: str
 
 
 class FacultyCreate(FacultyBase):
@@ -19,7 +18,6 @@ class FacultyCreate(FacultyBase):
 
 class FacultyUpdate(BaseModel):
     name: Optional[str] = None
-    code: Optional[str] = None
 
 
 class FacultyRead(FacultyBase):
@@ -77,9 +75,8 @@ class ProgramRead(ProgramBase):
 # Module_UE
 # ---------------------------------------------------------------------------
 class ModuleBase(BaseModel):
-    code: str
-    title: str
-    credits_ects: int
+    # Modules not present in SQL schema; removed to reflect DB
+    pass
 
 
 class ModuleCreate(ModuleBase):
@@ -101,6 +98,7 @@ class ModuleRead(ModuleBase):
 # groups (Programs <-> Module_UE)
 # ---------------------------------------------------------------------------
 class GroupCreate(BaseModel):
+    # groups table not present in SQL schema; keep placeholder if needed
     program_id: int
     module_id: int
 
@@ -116,7 +114,6 @@ class CourseBase(BaseModel):
     code: str
     title: str
     credits: int
-    module_id: int
 
 
 class CourseCreate(CourseBase):
@@ -127,7 +124,7 @@ class CourseUpdate(BaseModel):
     code: Optional[str] = None
     title: Optional[str] = None
     credits: Optional[int] = None
-    module_id: Optional[int] = None
+    # module_id removed (not present in SQL Course)
 
 
 class CourseRead(CourseBase):
@@ -151,6 +148,7 @@ class PrerequisiteRead(PrerequisiteCreate):
 # Academic_year
 # ---------------------------------------------------------------------------
 class AcademicYearBase(BaseModel):
+    # AcademicYear table not present in SQL schema; semester stores academic_year as varchar
     start_date: date
     end_date: date
     year_label: str
@@ -168,18 +166,19 @@ class AcademicYearUpdate(BaseModel):
 
 class AcademicYearRead(AcademicYearBase):
     model_config = ConfigDict(from_attributes=True)
-    academic_year_id: int
+    # AcademicYear table removed; keep placeholder field for compatibility
+    academic_year_id: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
 # Semester
 # ---------------------------------------------------------------------------
 class SemesterBase(BaseModel):
+    academic_year: str
     term_name: str
     start_date: date
     end_date: date
     is_locked: bool = False
-    academic_year_id: int
 
 
 class SemesterCreate(SemesterBase):
@@ -191,6 +190,7 @@ class SemesterUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     is_locked: Optional[bool] = None
+    # The authoritative schema stores academic year as string in Semester
     academic_year_id: Optional[int] = None
 
 
@@ -204,7 +204,7 @@ class SemesterRead(SemesterBase):
 # ---------------------------------------------------------------------------
 class UserBase(BaseModel):
     name: str
-    phone: Optional[str] = None
+    # phone not present in SQL User_
     email: EmailStr
     role: str  # Admin, Teacher, Student
 
@@ -229,9 +229,10 @@ class UserRead(UserBase):
 # Teacher
 # ---------------------------------------------------------------------------
 class TeacherBase(BaseModel):
-    employee_code: str
-    speciality: Optional[str] = None
-    user_id: int
+    # Teacher table in SQL includes name, email and user_id
+    name: str
+    email: EmailStr
+    user_id: Optional[int] = None
 
 
 class TeacherCreate(TeacherBase):
@@ -239,8 +240,8 @@ class TeacherCreate(TeacherBase):
 
 
 class TeacherUpdate(BaseModel):
-    employee_code: Optional[str] = None
-    speciality: Optional[str] = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
     user_id: Optional[int] = None
 
 
@@ -281,6 +282,7 @@ class StudentRead(StudentBase):
 # Campus
 # ---------------------------------------------------------------------------
 class CampusBase(BaseModel):
+    # Campus/building/room not present in SQL; kept for compatibility but may be unused
     name: str
     city: str
     adress: Optional[str] = None
@@ -357,9 +359,10 @@ class RoomRead(RoomBase):
 # Course_offering
 # ---------------------------------------------------------------------------
 class CourseOfferingBase(BaseModel):
-    name: str
-    campus_id: int
-    teacher_id: int
+    # SQL Course_offering: room, capacity, teacher_id, course_id, semester_id
+    room: Optional[str] = None
+    capacity: Optional[int] = None
+    teacher_id: Optional[int] = None
     course_id: int
     semester_id: int
 
@@ -385,6 +388,7 @@ class CourseOfferingRead(CourseOfferingBase):
 # Class_schedule
 # ---------------------------------------------------------------------------
 class ClassScheduleBase(BaseModel):
+    # Class schedules not present in SQL; placeholder kept for compatibility
     day_of_week: str
     start_time: time
     end_time: time
@@ -413,10 +417,9 @@ class ClassScheduleRead(ClassScheduleBase):
 # Exam
 # ---------------------------------------------------------------------------
 class ExamBase(BaseModel):
+    # SQL Exam: type (string) and exam_date timestamp, course_offering_id
     exam_type: str
-    exam_date: date
-    weight_percentage: Decimal
-    max_score: Decimal
+    exam_date: datetime
     course_offering_id: int
 
 
@@ -471,7 +474,8 @@ class GradeBase(BaseModel):
     letter_grade: Optional[str] = None
     submitted_by: Optional[int] = None
     submitted_at: datetime
-    exam_id: int
+    # In SQL grades refer to enrollment (and submitted_by)
+    exam_id: Optional[int] = None
     enrollment_id: int
 
 
@@ -497,6 +501,7 @@ class GradeRead(GradeBase):
 # Session (ClassSession)
 # ---------------------------------------------------------------------------
 class SessionBase(BaseModel):
+    # Sessions table not present in SQL schema; replaced by Attendance.session_date
     session_date: date
     status: str
     topic_covered: Optional[str] = None
@@ -523,8 +528,9 @@ class SessionRead(SessionBase):
 # Attendance
 # ---------------------------------------------------------------------------
 class AttendanceBase(BaseModel):
+    # SQL Attendance: session_date, status, enrollment_id
+    session_date: date
     status: str
-    session_id: int
     enrollment_id: int
 
 

@@ -34,15 +34,8 @@ def get_summary(db: Session = Depends(get_db)):
         .all()
     )
 
-    # Cours par module (top 10)
-    module_counts = (
-        db.query(models.ModuleUE.title, func.count(models.Course.course_id))
-        .join(models.Course, models.Course.module_id == models.ModuleUE.module_id, isouter=True)
-        .group_by(models.ModuleUE.title)
-        .order_by(func.count(models.Course.course_id).desc())
-        .limit(10)
-        .all()
-    )
+    # Cours par module — table modules not present in authoritative SQL; omitted
+    module_counts = []
 
     # Programmes par département (top 10)
     dept_programs = (
@@ -65,9 +58,7 @@ def get_summary(db: Session = Depends(get_db)):
         "student_status_distribution": [
             {"status": s, "count": c} for s, c in status_counts
         ],
-        "courses_per_module": [
-            {"module": m, "count": c} for m, c in module_counts
-        ],
+        "courses_per_module": [],
         "programs_per_department": [
             {"department": d, "count": c} for d, c in dept_programs
         ],

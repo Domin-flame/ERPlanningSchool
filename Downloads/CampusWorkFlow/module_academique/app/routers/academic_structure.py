@@ -12,7 +12,6 @@ router = APIRouter(tags=["Academic Structure"])
 faculty_crud = CRUDBase(models.Faculty, "faculty_id")
 department_crud = CRUDBase(models.Department, "department_id")
 program_crud = CRUDBase(models.Programs, "program_id")
-module_crud = CRUDBase(models.ModuleUE, "module_id")
 course_crud = CRUDBase(models.Course, "course_id")
 
 
@@ -131,85 +130,8 @@ def delete_program(program_id: int, db: Session = Depends(get_db)):
     program_crud.remove(db, program_id)
 
 
-# ---------------------------------------------------------------------------
-# Module_UE
-# ---------------------------------------------------------------------------
-@router.post("/modules/", response_model=schemas.ModuleRead, status_code=status.HTTP_201_CREATED)
-def create_module(payload: schemas.ModuleCreate, db: Session = Depends(get_db)):
-    return module_crud.create(db, payload.model_dump())
-
-
-@router.get("/modules/", response_model=List[schemas.ModuleRead])
-def list_modules(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return module_crud.get_multi(db, skip, limit)
-
-
-@router.get("/modules/{module_id}", response_model=schemas.ModuleRead)
-def get_module(module_id: int, db: Session = Depends(get_db)):
-    obj = module_crud.get(db, module_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Module introuvable")
-    return obj
-
-
-@router.put("/modules/{module_id}", response_model=schemas.ModuleRead)
-def update_module(module_id: int, payload: schemas.ModuleUpdate, db: Session = Depends(get_db)):
-    obj = module_crud.get(db, module_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Module introuvable")
-    return module_crud.update(db, obj, payload.model_dump(exclude_unset=True))
-
-
-@router.delete("/modules/{module_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_module(module_id: int, db: Session = Depends(get_db)):
-    obj = module_crud.get(db, module_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Module introuvable")
-    module_crud.remove(db, module_id)
-
-
-# ---------------------------------------------------------------------------
-# groups (association Programs <-> Module_UE)
-# ---------------------------------------------------------------------------
-@router.post("/groups/", response_model=schemas.GroupRead, status_code=status.HTTP_201_CREATED)
-def create_group_link(payload: schemas.GroupCreate, db: Session = Depends(get_db)):
-    if not program_crud.get(db, payload.program_id):
-        raise HTTPException(status_code=404, detail="Programme introuvable")
-    if not module_crud.get(db, payload.module_id):
-        raise HTTPException(status_code=404, detail="Module introuvable")
-    existing = (
-        db.query(models.Group)
-        .filter(
-            models.Group.program_id == payload.program_id,
-            models.Group.module_id == payload.module_id,
-        )
-        .first()
-    )
-    if existing:
-        raise HTTPException(status_code=400, detail="Ce lien programme/module existe déjà")
-    obj = models.Group(**payload.model_dump())
-    db.add(obj)
-    db.commit()
-    db.refresh(obj)
-    return obj
-
-
-@router.get("/groups/", response_model=List[schemas.GroupRead])
-def list_group_links(db: Session = Depends(get_db)):
-    return db.query(models.Group).all()
-
-
-@router.delete("/groups/{program_id}/{module_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_group_link(program_id: int, module_id: int, db: Session = Depends(get_db)):
-    obj = (
-        db.query(models.Group)
-        .filter(models.Group.program_id == program_id, models.Group.module_id == module_id)
-        .first()
-    )
-    if not obj:
-        raise HTTPException(status_code=404, detail="Lien introuvable")
-    db.delete(obj)
-    db.commit()
+# Note: Module_UE and groups are not present in the authoritative SQL schema
+# and endpoints have been removed to keep API aligned with the database.
 
 
 # ---------------------------------------------------------------------------
@@ -217,8 +139,6 @@ def delete_group_link(program_id: int, module_id: int, db: Session = Depends(get
 # ---------------------------------------------------------------------------
 @router.post("/courses/", response_model=schemas.CourseRead, status_code=status.HTTP_201_CREATED)
 def create_course(payload: schemas.CourseCreate, db: Session = Depends(get_db)):
-    if not module_crud.get(db, payload.module_id):
-        raise HTTPException(status_code=404, detail="Module parent introuvable")
     return course_crud.create(db, payload.model_dump())
 
 

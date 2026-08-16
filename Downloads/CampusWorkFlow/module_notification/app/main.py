@@ -3,15 +3,25 @@ import json
 import logging
 import os
 
+from jose import jwt, JWTError
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.rabbitmq_consumer import start_consumer
+from app.config import JWT_SECRET, JWT_ALGORITHM
 from app.routers import notifications
 
 logger = logging.getLogger(__name__)
-Base.metadata.create_all(bind=engine)
+# Schema management is delegated to Alembic migrations. If migrations exist
+# and `DB_AUTO_INIT=true` is set, attempt to run them at startup.
+try:
+    if os.getenv("DB_AUTO_INIT", "false").lower() == "true":
+        import subprocess
+
+        subprocess.run(["alembic", "-c", "migrations/alembic.ini", "upgrade", "head"], check=False)
+except Exception:
+    pass
 
 app = FastAPI(
     title="CampusWorkflow — Notification Service",
@@ -56,13 +66,28 @@ async def broadcast_to_user(user_id: int, payload: dict) -> None:
         sockets.remove(ws)
 
 
-@app.websocket("/ws/notifications/{user_id}")
-async def ws_notifications(websocket: WebSocket, user_id: int):
+@app.websocket("/ws/notifications")
+async def ws_notifications(websocket: WebSocket):
     """
     WebSocket pour les notifications temps réel.
     Le client se connecte avec son user_id après authentification.
     Le gateway doit vérifier le token avant d'autoriser la connexion.
     """
+    # Validate JWT from Authorization header to deduce user identity
+    auth = websocket.headers.get("authorization") or websocket.headers.get("sec-websocket-protocol")
+    if not auth:
+        await websocket.close(code=1008)
+        return
+    if auth.lower().startswith("bearer "):
+        token = auth.split(None, 1)[1]
+    else:
+        token = auth
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except JWTError:
+        await websocket.close(code=1008)
+        return
+    user_id = payload.get("user_id") or payload.get("sub")
     await websocket.accept()
     _ws_connections.setdefault(user_id, []).append(websocket)
     logger.info("[WS] user %s connecté (%d sockets actifs)", user_id, len(_ws_connections[user_id]))

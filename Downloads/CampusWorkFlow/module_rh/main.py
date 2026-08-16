@@ -9,16 +9,15 @@ from app.config import DATABASE_SCHEMA
 from app.database import Base, engine
 from app.routers import employees, leave, attendance, payroll
 
-# Crée le schéma et les tables si inexistants
-if engine.dialect.name == "postgresql" and DATABASE_SCHEMA:
-    try:
-        with engine.connect() as conn:
-            conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {DATABASE_SCHEMA};"))
-            conn.commit()
-    except Exception as e:
-        print(f"Warning creating schema {DATABASE_SCHEMA}: {e}")
+# Schema and table creation are managed by Alembic migrations. Optionally
+# run migrations at startup when `DB_AUTO_INIT=true` and migrations exist.
+try:
+    if os.getenv("DB_AUTO_INIT", "false").lower() == "true":
+        import subprocess
 
-Base.metadata.create_all(bind=engine)
+        subprocess.run(["alembic", "-c", "migrations/alembic.ini", "upgrade", "head"], check=False)
+except Exception:
+    pass
 
 app = FastAPI(
     title="HR & Admin Service",

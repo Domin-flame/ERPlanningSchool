@@ -1,6 +1,6 @@
 # Campus Workflow - ERP Universitaire Complet
 **Version:** 1.0 COMPLET | **Statut:** ✅ Production Ready  
-**Date:** 2 août 2026
+**Date:** 13 août 2026
 
 ---
 
@@ -12,6 +12,8 @@
 - 💰 **Finance** - Facturation, paiements MoMo, bourses, campagnes marketing
 - 👥 **RH** - Employés, congés, paie, gestion d'actifs
 - 🎓 **Sécurité** - JWT, RBAC, ABAC, RLS PostgreSQL
+- **Marketing** 
+- **Authentification**
 
 ### Points Forts
 ✅ **Indépendant** - 5 services microservices totalement isolés  
@@ -427,4 +429,5 @@ curl http://localhost:8001/health  # Check auth service
 **✅ DÉPLOYABLE** - Prêt pour production
 
 ---
+
 

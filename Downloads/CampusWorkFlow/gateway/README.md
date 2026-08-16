@@ -32,11 +32,16 @@ AUTH_SERVICE_URL=http://auth-service:8001
 ACADEMIC_SERVICE_URL=http://academic-service:8002
 FINANCE_SERVICE_URL=http://finance-service:8003
 HR_SERVICE_URL=http://hr-service:8004
+MESSAGE_SERVICE_URL=http://message-service:8005
+NOTIFICATION_SERVICE_URL=http://notification-service:8006
 ```
 
 ## Démarrage
 
 ```bash
+# Se placer sur le bon dossier
+cd gateway
+
 # Development
 npm run dev
 

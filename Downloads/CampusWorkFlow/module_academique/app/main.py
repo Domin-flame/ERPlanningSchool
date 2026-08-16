@@ -1,24 +1,28 @@
 import os
+import subprocess
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
 
-from app.database import Base, engine, DATABASE_SCHEMA
+from app.database import engine
 from app.routers import academic_structure, analytics, calendar, infrastructure, offerings, people, records
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    if engine.dialect.name == "postgresql" and DATABASE_SCHEMA:
-        try:
-            with engine.connect() as conn:
-                conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {DATABASE_SCHEMA};"))
-                conn.commit()
-        except Exception as e:
-            print(f"Warning creating schema {DATABASE_SCHEMA}: {e}")
-    Base.metadata.create_all(bind=engine)
+    # Schema and tables are managed by Alembic migrations.
+    # Optionally run migrations at startup if DB_AUTO_INIT is enabled.
+    try:
+        if os.getenv("DB_AUTO_INIT", "false").lower() == "true":
+            # Attempt to run alembic upgrade head; ignore failures to avoid
+            # blocking startup in environments without migrations.
+            subprocess.run(
+                ["alembic", "-c", "migrations/alembic.ini", "upgrade", "head"],
+                check=False,
+            )
+    except Exception:
+        pass
     yield
 
 

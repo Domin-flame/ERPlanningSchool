@@ -1,95 +1,226 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import FoxMascot from "./FoxMascot.jsx";
+import {
+  LayoutDashboard,
+  GraduationCap,
+  Presentation,
+  Target,
+  Wallet,
+  Users,
+  Folder,
+  BookOpen,
+  CalendarDays,
+  MessageSquare,
+  BarChart3,
+  Settings,
+  PenSquare,
+  CreditCard,
+  Receipt,
+  Menu,
+  X,
+  Search,
+  Bell,
+  LogOut,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Info,
+  FileText,
+  Banknote,
+} from "lucide-react";
+import AppLogo from "./AppLogo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useData } from "../context/DataContext.jsx";
 
 // Navigation spécifique par rôle
-//changer les icones pour mettre des icones lucid 
 const ROLE_NAVIGATION = {
   academic: {
     portals: [
-      { to: "/", label: "Dashboard Direction", icon: "📊", end: true },
-      { to: "/student", label: "Portail Étudiant", icon: "🎓" },
-      { to: "/professeur", label: "Espace Enseignant", icon: "👨‍🏫" },
-      { to: "/marketing", label: "Portail Marketing", icon: "🎯" },
-      { to: "/finance", label: "Portail Finance", icon: "💶" },
-      { to: "/hr", label: "Portail RH", icon: "👥" },
+      { to: "/", label: "Dashboard Direction", icon: LayoutDashboard, end: true },
+      { to: "/student", label: "Portail Étudiant", icon: GraduationCap },
+      { to: "/professeur", label: "Espace Enseignant", icon: Presentation },
+      { to: "/marketing", label: "Portail Marketing", icon: Target },
+      { to: "/finance", label: "Portail Finance", icon: Wallet },
+      { to: "/hr", label: "Portail RH", icon: Users },
     ],
     tools: [
-      { to: "/students", label: "Dossiers Étudiants", icon: "📁" },
-      { to: "/courses", label: "Catalogue Cours", icon: "📚" },
-      { to: "/calendar", label: "Examens & Plannings", icon: "📅" },
-      { to: "/messages", label: "Messagerie", icon: "💬" },
-      { to: "/analytics", label: "Rapports & Analytics", icon: "📈" },
-      { to: "/settings", label: "Paramètres ERP", icon: "⚙️" },
+      { to: "/students", label: "Dossiers Étudiants", icon: Folder },
+      { to: "/courses", label: "Catalogue Cours", icon: BookOpen },
+      { to: "/calendar", label: "Examens & Plannings", icon: CalendarDays },
+      { to: "/messages", label: "Messagerie", icon: MessageSquare },
+      { to: "/analytics", label: "Rapports & Analytics", icon: BarChart3 },
+      { to: "/settings", label: "Paramètres ERP", icon: Settings },
     ],
   },
   professeur: {
     portals: [
-      { to: "/professeur", label: "Mon Espace Enseignant", icon: "👨‍🏫", end: true },
+      { to: "/professeur", label: "Mon Espace Enseignant", icon: Presentation, end: true },
     ],
     tools: [
-      { to: "/courses", label: "Mes Cours Enseignés", icon: "📚" },
-      { to: "/students", label: "Saisie Notes & Appel", icon: "✏️" },
-      { to: "/calendar", label: "Mon Emploi du temps", icon: "📅" },
-      { to: "/messages", label: "Messagerie & Avis", icon: "💬" },
-      { to: "/settings", label: "Mon Profil", icon: "⚙️" },
+      { to: "/courses", label: "Mes Cours Enseignés", icon: BookOpen },
+      { to: "/students", label: "Saisie Notes & Appel", icon: PenSquare },
+      { to: "/calendar", label: "Mon Emploi du temps", icon: CalendarDays },
+      { to: "/messages", label: "Messagerie & Avis", icon: MessageSquare },
+      { to: "/settings", label: "Mon Profil", icon: Settings },
     ],
   },
   student: {
     portals: [
-      { to: "/student", label: "Mon Espace Étudiant", icon: "🎓", end: true },
+      { to: "/student", label: "Mon Espace Étudiant", icon: GraduationCap, end: true },
     ],
     tools: [
-      { to: "/courses", label: "Mes Cours Inscrits", icon: "📚" },
-      { to: "/calendar", label: "Mon Emploi du Temps", icon: "📅" },
-      { to: "/finance", label: "Mes Frais & Solde", icon: "💳" },
-      { to: "/messages", label: "Contacter Enseignant", icon: "💬" },
-      { to: "/settings", label: "Mon Profil", icon: "⚙️" },
+      { to: "/courses", label: "Mes Cours Inscrits", icon: BookOpen },
+      { to: "/calendar", label: "Mon Emploi du Temps", icon: CalendarDays },
+      { to: "/finance", label: "Mes Frais & Solde", icon: CreditCard },
+      { to: "/messages", label: "Contacter Enseignant", icon: MessageSquare },
+      { to: "/settings", label: "Mon Profil", icon: Settings },
     ],
   },
   rh: {
     portals: [
-      { to: "/hr", label: "Tableau de Bord RH", icon: "👥", end: true },
+      { to: "/hr", label: "Tableau de Bord RH", icon: Users, end: true },
     ],
     tools: [
-      { to: "/hr", label: "Personnel & Paie", icon: "💶" },
-      { to: "/courses", label: "Formateurs & Enseignants", icon: "👨‍🏫" },
-      { to: "/analytics", label: "Rapports RH", icon: "📊" },
-      { to: "/messages", label: "Messagerie Interne", icon: "💬" },
-      { to: "/settings", label: "Paramètres", icon: "⚙️" },
+      { to: "/hr", label: "Personnel & Paie", icon: Wallet },
+      { to: "/courses", label: "Formateurs & Enseignants", icon: Presentation },
+      { to: "/analytics", label: "Rapports RH", icon: BarChart3 },
+      { to: "/messages", label: "Messagerie Interne", icon: MessageSquare },
+      { to: "/settings", label: "Paramètres", icon: Settings },
     ],
   },
   finance: {
     portals: [
-      { to: "/finance", label: "Tableau de Bord Finance", icon: "💶", end: true },
+      { to: "/finance", label: "Tableau de Bord Finance", icon: Wallet, end: true },
     ],
     tools: [
-      { to: "/finance", label: "Factures & Encaissements", icon: "📜" },
-      { to: "/students", label: "Compte Étudiants", icon: "🎓" },
-      { to: "/analytics", label: "Bilan & Bilan Trésorerie", icon: "📈" },
-      { to: "/messages", label: "Messagerie", icon: "💬" },
-      { to: "/settings", label: "Paramètres", icon: "⚙️" },
+      { to: "/finance", label: "Factures & Encaissements", icon: Receipt },
+      { to: "/students", label: "Compte Étudiants", icon: GraduationCap },
+      { to: "/analytics", label: "Bilan & Bilan Trésorerie", icon: BarChart3 },
+      { to: "/messages", label: "Messagerie", icon: MessageSquare },
+      { to: "/settings", label: "Paramètres", icon: Settings },
     ],
   },
   marketing: {
     portals: [
-      { to: "/marketing", label: "Tableau de Bord Marketing", icon: "🎯", end: true },
+      { to: "/marketing", label: "Tableau de Bord Marketing", icon: Target, end: true },
     ],
     tools: [
-      { to: "/marketing", label: "CRM Prospects & Leads", icon: "🎯" },
-      { to: "/students", label: "Suivi des Inscriptions", icon: "🎓" },
-      { to: "/analytics", label: "Analytics Conversions", icon: "📈" },
-      { to: "/messages", label: "Messagerie", icon: "💬" },
-      { to: "/settings", label: "Paramètres", icon: "⚙️" },
+      { to: "/marketing", label: "CRM Prospects & Leads", icon: Target },
+      { to: "/students", label: "Suivi des Inscriptions", icon: GraduationCap },
+      { to: "/analytics", label: "Analytics Conversions", icon: BarChart3 },
+      { to: "/messages", label: "Messagerie", icon: MessageSquare },
+      { to: "/settings", label: "Paramètres", icon: Settings },
     ],
   },
 };
 
+// Icônes et libellés par type de notification
+const NOTIF_ICONS = {
+  success: { icon: CheckCircle2, className: "notif-ico success" },
+  warning: { icon: AlertTriangle, className: "notif-ico warning" },
+  error: { icon: XCircle, className: "notif-ico error" },
+  info: { icon: Info, className: "notif-ico info" },
+};
+
+/** Normalise une chaîne pour une comparaison insensible aux accents/casse. */
+function normalize(str) {
+  return String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Construit l'index de recherche global à partir des données déjà chargées
+ * dans DataContext (pas d'appel réseau supplémentaire : tout est déjà en mémoire).
+ * Chaque entrée expose { id, category, title, subtitle, to, icon, haystack }.
+ */
+function buildSearchIndex({ students, courses, employees, invoices, leads }) {
+  const index = [];
+
+  for (const s of students || []) {
+    const name = s.name || `${s.first_name || ""} ${s.last_name || ""}`.trim();
+    index.push({
+      id: `student-${s.student_id || s.id}`,
+      category: "Étudiants",
+      title: name || "Étudiant",
+      subtitle: s.email || s.matricule || s.status || "",
+      to: "/students",
+      icon: GraduationCap,
+      haystack: normalize(`${name} ${s.email || ""} ${s.matricule || ""} ${s.status || ""}`),
+    });
+  }
+
+  for (const c of courses || []) {
+    index.push({
+      id: `course-${c.course_id || c.code}`,
+      category: "Cours",
+      title: c.title || c.code || "Cours",
+      subtitle: c.code || "",
+      to: "/courses",
+      icon: BookOpen,
+      haystack: normalize(`${c.title || ""} ${c.code || ""} ${c.dept || ""} ${c.module_id || ""}`),
+    });
+  }
+
+  for (const e of employees || []) {
+    const name = `${e.first_name || ""} ${e.last_name || ""}`.trim();
+    index.push({
+      id: `employee-${e.employee_id || e.id}`,
+      category: "Employés",
+      title: name || "Employé",
+      subtitle: [e.position, e.department].filter(Boolean).join(" · "),
+      to: "/hr",
+      icon: Users,
+      haystack: normalize(`${name} ${e.position || ""} ${e.department || ""}`),
+    });
+  }
+
+  for (const inv of invoices || []) {
+    const ref = inv.numero_facture || `FAC-${inv.id_invoice || inv.id}`;
+    const student = inv.id_student || inv.studentName || "";
+    index.push({
+      id: `invoice-${inv.id_invoice || inv.id}`,
+      category: "Factures",
+      title: ref,
+      subtitle: student,
+      to: "/finance",
+      icon: FileText,
+      haystack: normalize(`${ref} ${student} ${inv.statut || inv.status || ""}`),
+    });
+  }
+
+  for (const l of leads || []) {
+    const name = l.nom || l.name || "Prospect";
+    index.push({
+      id: `lead-${l.id_lead || l.id}`,
+      category: "Leads",
+      title: name,
+      subtitle: l.contact || l.email || l.source || "",
+      to: "/marketing",
+      icon: Banknote,
+      haystack: normalize(`${name} ${l.contact || ""} ${l.email || ""} ${l.source || ""}`),
+    });
+  }
+
+  return index;
+}
+
 export default function Layout() {
   const { user, logout } = useAuth();
-  const { notifications, markAllNotificationsRead, searchQuery, setSearchQuery } = useData();
+  const {
+    notifications,
+    markAllNotificationsRead,
+    markNotificationRead,
+    searchQuery,
+    setSearchQuery,
+    students,
+    courses,
+    employees,
+    invoices,
+    leads,
+  } = useData();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -101,15 +232,47 @@ export default function Layout() {
   const navConfig = ROLE_NAVIGATION[currentRole] || ROLE_NAVIGATION.academic;
   const unreadNotifs = notifications.filter((n) => n.unread).length;
 
+  // Index de recherche recalculé uniquement quand les données changent
+  const searchIndex = useMemo(
+    () => buildSearchIndex({ students, courses, employees, invoices, leads }),
+    [students, courses, employees, invoices, leads]
+  );
+
+  // Résultats groupés par catégorie, 4 par catégorie maximum
+  const searchResults = useMemo(() => {
+    const q = normalize(searchQuery);
+    if (!q) return [];
+    const matches = searchIndex.filter((entry) => entry.haystack.includes(q));
+    const grouped = {};
+    for (const m of matches) {
+      if (!grouped[m.category]) grouped[m.category] = [];
+      if (grouped[m.category].length < 4) grouped[m.category].push(m);
+    }
+    return Object.entries(grouped);
+  }, [searchIndex, searchQuery]);
+
+  const totalResults = searchResults.reduce((sum, [, items]) => sum + items.length, 0);
+  const showResultsPanel = searchFocused && searchQuery.trim().length > 0;
+
+  const goToResult = (entry) => {
+    setSearchFocused(false);
+    setSearchQuery("");
+    navigate(entry.to);
+  };
+
+  const handleNotifClick = (n) => {
+    if (n.unread) markNotificationRead(n.id);
+  };
+
   return (
     <div className="app">
       {sidebarOpen && <div className="scrim" onClick={() => setSidebarOpen(false)} />}
-      
+
       {/* Sidebar navigation */}
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="brand">
           <div className="brand-mark">
-            <FoxMascot size={34} />
+            <AppLogo size={34} />
           </div>
           <div>
             <h1>CampusWorkflow</h1>
@@ -128,7 +291,7 @@ export default function Layout() {
               className={({ isActive }) => (isActive ? "active" : "")}
               onClick={() => setSidebarOpen(false)}
             >
-              <span className="ico">{item.icon}</span>
+              <span className="ico"><item.icon size={18} strokeWidth={2} /></span>
               <span>{item.label}</span>
             </NavLink>
           ))}
@@ -144,7 +307,7 @@ export default function Layout() {
               className={({ isActive }) => (isActive ? "active" : "")}
               onClick={() => setSidebarOpen(false)}
             >
-              <span className="ico">{item.icon}</span>
+              <span className="ico"><item.icon size={18} strokeWidth={2} /></span>
               <span>{item.label}</span>
             </NavLink>
           ))}
@@ -162,106 +325,18 @@ export default function Layout() {
             </span>
           </div>
           <button className="icon-btn" onClick={logout} title="Se déconnecter" style={{ flexShrink: 0 }}>
-            🚪
+            <LogOut size={16} strokeWidth={2} />
           </button>
         </div>
       </aside>
 
       {/* Main content viewport */}
       <main className="main">
-        {/* Topbar sticky */}
-        <header className="topbar">
-          <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Ouvrir le menu">
-            ☰
-          </button>
-
-          {/* Global Search Bar */}
-          <div className="search">
-            <div className="search-inner">
-              <span className="search-ico">🔍</span>
-              <input
-                placeholder="Rechercher cours, étudiants, factures, leads..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-              />
-            </div>
-            {searchFocused && (
-              <div className="search-panel open">
-                <strong>Recherche Rapide ERP</strong>
-                <div className="quick-tags" style={{ marginTop: 6 }}>
-                  <span className="tag" onClick={() => setSearchQuery("CS101")}>CS101</span>
-                  <span className="tag" onClick={() => setSearchQuery("Alexandre")}>Alexandre</span>
-                  <span className="tag" onClick={() => setSearchQuery("Factures")}>Factures</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="top-actions">
-            {/* Notifications Dropdown */}
-            <div className="notif-wrap">
-              <button
-                className="icon-btn"
-                onClick={() => setNotifOpen(!notifOpen)}
-                aria-label="Notifications"
-              >
-                🔔
-                {unreadNotifs > 0 && <span className="counter">{unreadNotifs}</span>}
-              </button>
-
-              {notifOpen && (
-                <div className="notif-panel open">
-                  <div className="panel-row" style={{ paddingBottom: 10, borderBottom: "1px solid var(--line)" }}>
-                    <strong>Notifications ({unreadNotifs})</strong>
-                    <button className="btn ghost sm" style={{ marginLeft: "auto" }} onClick={markAllNotificationsRead}>
-                      Tout lire
-                    </button>
-                  </div>
-                  <div style={{ maxHeight: 280, overflowY: "auto" }}>
-                    {notifications.map((n) => (
-                      <div className="panel-row" key={n.id} style={{ opacity: n.unread ? 1 : 0.6 }}>
-                        {n.unread && <span className="dot" />}
-                        <div>
-                          <strong>{n.title}</strong>
-                          <p className="muted" style={{ fontSize: 12, margin: "2px 0 0" }}>{n.desc}</p>
-                          <span className="muted" style={{ fontSize: 10 }}>{n.time}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Profil Utilisateur */}
-            <div className="avatar" title={user?.email}>
-              {(user?.full_name || user?.name || "??").substring(0, 2).toUpperCase()}
-            </div>
-          </div>
-        </header>
-
         {/* Sub-container page avec transition animée */}
         <section className="content page-transition-wrap" key={location.pathname}>
           <Outlet />
         </section>
       </main>
-
-      {/* Navigation Mobile en bas de l'écran */}
-      <nav className="bottom-tabs">
-        {navConfig.portals.concat(navConfig.tools.slice(0, 3)).map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) => `mobile-tab ${isActive ? "active" : ""}`}
-          >
-            <span className="ico">{item.icon}</span>
-            <span>{item.label.split(" ")[0]}</span>
-          </NavLink>
-        ))}
-      </nav>
     </div>
   );
 }

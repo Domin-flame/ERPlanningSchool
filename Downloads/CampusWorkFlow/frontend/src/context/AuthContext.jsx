@@ -29,6 +29,21 @@ function msUntilExpiry(token) {
   return payload.exp * 1000 - Date.now();
 }
 
+function validatePassword(password) {
+  const rules = [
+    { valid: password.length >= 8, message: "au moins 8 caractÃ¨res" },
+    { valid: /[A-Z]/.test(password), message: "une majuscule" },
+    { valid: /[a-z]/.test(password), message: "une minuscule" },
+    { valid: /\d/.test(password), message: "un chiffre" },
+    { valid: /[/*@#._!$%^&+=-]/.test(password), message: "un caractÃ¨re spÃ©cial" },
+  ];
+  const missing = rules.filter((rule) => !rule.valid).map((rule) => rule.message);
+  return {
+    valid: missing.length === 0,
+    message: missing.length ? `Le mot de passe doit contenir ${missing.join(", ")}.` : "",
+  };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // true au démarrage = vérification du token stocké
@@ -152,6 +167,7 @@ export function AuthProvider({ children }) {
       const { access_token, refresh_token, user: userData } = res.data;
 
       if (!access_token || !userData) {
+        setLoading(false);
         return { success: false, message: "Réponse invalide du serveur" };
       }
 
@@ -160,9 +176,11 @@ export function AuthProvider({ children }) {
 
       return { success: true, user: userData };
     } catch (err) {
+      console.error("Login error:", err);
       const message =
         err.response?.data?.detail ||
         err.response?.data?.message ||
+        err.message ||
         "Email ou mot de passe incorrect";
       return { success: false, message };
     } finally {
@@ -244,3 +262,5 @@ export function useAuth() {
   }
   return context;
 }
+
+// est ce que l'auth context est complet coompte tenu des modifications qu'il ya à faire au niveau du module d'authentification ? 

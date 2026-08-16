@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+// ajouter d'autres animations pour rendre l'application vivante 
+
 /**
  * Tooltip simple au survol (position top / bottom).
  */

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+//a quoi sert le breadcrumb dans le code 
 /**
  * Fil d'ariane (breadcrumb). Chaque entrée est un objet { label, to? }.
  */

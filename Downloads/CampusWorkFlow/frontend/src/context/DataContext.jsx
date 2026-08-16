@@ -1,8 +1,28 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import api from "../api/client.js";
 import { useAuth } from "./AuthContext.jsx";
 
 const DataContext = createContext();
+
+/**
+ * Formate une date ISO en libellé relatif court (français).
+ */
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "";
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+
+  if (diffMin < 1) return "À l'instant";
+  if (diffMin < 60) return `Il y a ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `Il y a ${diffH} h`;
+  const diffJ = Math.floor(diffH / 24);
+  if (diffJ === 1) return "Hier";
+  if (diffJ < 7) return `Il y a ${diffJ} j`;
+  return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+}
 
 /**
  * DataContext — source de vérité unique pour les données métier.
@@ -27,6 +47,16 @@ export function DataProvider({ children }) {
 
   // Barre de recherche globale
   const [searchQuery, setSearchQuery] = useState("");
+  const [preferences, setPreferences] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("cw_preferences")) || {
+        language: "fr",
+        notificationsEnabled: true,
+      };
+    } catch {
+      return { language: "fr", notificationsEnabled: true };
+    }
+  });
 
   // ----- Chargement des données selon le rôle -----
   const loadData = useCallback(async () => {
@@ -64,6 +94,30 @@ export function DataProvider({ children }) {
     if (["academic", "marketing"].includes(role)) {
       tasks.push(safeGet("/marketing/leads", setLeads, "leads"));
     }
+
+    // Notifications — disponibles pour tous les rôles authentifiés
+    tasks.push(
+      (async () => {
+        try {
+          const res = await api.get("/notifications", { params: { limit: 30 } });
+          const items = res.data?.items ?? res.data ?? [];
+          setNotifications(
+            items.map((n) => ({
+              id: n.id,
+              title: n.title,
+              desc: n.message,
+              time: formatRelativeTime(n.created_at),
+              unread: !n.read,
+              type: n.type || "info",
+              category: n.category || "system",
+            }))
+          );
+        } catch (err) {
+          setErrors((prev) => ({ ...prev, notifications: err.response?.data?.detail || "Erreur de chargement des notifications" }));
+        }
+      })()
+    );
+
     // Conversations disponibles pour tous (pas de backend dédié pour l'instant)
     setConversations([]);
 
@@ -89,6 +143,14 @@ export function DataProvider({ children }) {
   }, [isAuthenticated, loadData]);
 
   const refreshData = () => loadData();
+
+  const updatePreference = (key, value) => {
+    setPreferences((prev) => {
+      const next = { ...prev, [key]: value };
+      localStorage.setItem("cw_preferences", JSON.stringify(next));
+      return next;
+    });
+  };
 
   // --- Gestion des cours ---
   const addCourse = async (newCourse) => {
@@ -205,10 +267,13 @@ export function DataProvider({ children }) {
     }
   };
 
-  // --- Notifications locales (feedback immédiat, non persistées en base) ---
+  // --- Notifications ---
+  // Ajout local immédiat (feedback optimiste, ex: juste après la création d'un cours).
+  // Préfixe "local-" pour ne jamais entrer en conflit avec un id UUID venant du backend.
   const addNotificationLocal = (notif) => {
+    if (preferences.notificationsEnabled === false) return;
     const item = {
-      id: Date.now(),
+      id: `local-${Date.now()}`,
       title: notif.title,
       desc: notif.desc,
       time: "À l'instant",
@@ -218,9 +283,90 @@ export function DataProvider({ children }) {
     setNotifications((prev) => [item, ...prev]);
   };
 
-  const markAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  // Marque une notification précise comme lue (clic sur la notification).
+  const markNotificationRead = async (id) => {
+    // Mise à jour optimiste
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
+    if (typeof id === "string" && id.startsWith("local-")) return;
+    try {
+      await api.post("/notifications/read", { ids: [id] });
+    } catch (err) {
+      // La notification reste marquée lue côté UI même si la sync échoue ;
+      // elle sera resynchronisée au prochain chargement.
+      setErrors((prev) => ({ ...prev, notifications: err.response?.data?.detail || "Erreur de synchronisation" }));
+    }
   };
+
+  // Marque toutes les notifications comme lues (bouton "Tout lire").
+  const markAllNotificationsRead = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    try {
+      await api.post("/notifications/read", { ids: [] });
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, notifications: err.response?.data?.detail || "Erreur de synchronisation" }));
+    }
+  };
+
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const searchResults = useMemo(() => {
+    if (!normalizedSearchQuery) return [];
+
+    const textOf = (value) => String(value ?? "").toLowerCase();
+    const matches = (...fields) => fields.some((field) => textOf(field).includes(normalizedSearchQuery));
+    const compact = (items) => items.filter(Boolean).join(" · ");
+
+    const courseResults = courses
+      .filter((course) => matches(course.code, course.title, course.name, course.teacher, course.module_id))
+      .map((course) => ({
+        id: `course-${course.course_id || course.id || course.code || course.title}`,
+        type: "Cours",
+        title: course.title || course.name || course.code || "Cours",
+        subtitle: compact([course.code, course.teacher, course.credits ? `${course.credits} crédits` : ""]),
+        to: "/courses",
+      }));
+
+    const studentResults = students
+      .filter((student) => matches(student.full_name, student.name, student.email, student.matricule, student.program_id, student.status))
+      .map((student) => ({
+        id: `student-${student.student_id || student.id || student.matricule || student.email}`,
+        type: "Étudiant",
+        title: student.full_name || student.name || student.matricule || "Étudiant",
+        subtitle: compact([student.matricule, student.email, student.status]),
+        to: "/students",
+      }));
+
+    const invoiceResults = invoices
+      .filter((invoice) => matches(invoice.reference, invoice.studentName, invoice.student_name, invoice.status, invoice.amount, invoice.category))
+      .map((invoice) => ({
+        id: `invoice-${invoice.id_invoice || invoice.id || invoice.reference}`,
+        type: "Finance",
+        title: invoice.reference || invoice.studentName || invoice.student_name || "Facture",
+        subtitle: compact([invoice.status, invoice.amount, invoice.due_date]),
+        to: "/finance",
+      }));
+
+    const employeeResults = employees
+      .filter((employee) => matches(employee.full_name, employee.first_name, employee.last_name, employee.email, employee.department, employee.position))
+      .map((employee) => ({
+        id: `employee-${employee.employee_id || employee.id || employee.email}`,
+        type: "RH",
+        title: employee.full_name || `${employee.first_name || ""} ${employee.last_name || ""}`.trim() || "Employé",
+        subtitle: compact([employee.position, employee.department, employee.email]),
+        to: "/hr",
+      }));
+
+    const leadResults = leads
+      .filter((lead) => matches(lead.name, lead.full_name, lead.email, lead.status, lead.source))
+      .map((lead) => ({
+        id: `lead-${lead.id_lead || lead.id || lead.email}`,
+        type: "Marketing",
+        title: lead.name || lead.full_name || lead.email || "Prospect",
+        subtitle: compact([lead.status, lead.source, lead.email]),
+        to: "/marketing",
+      }));
+
+    return [...courseResults, ...studentResults, ...invoiceResults, ...employeeResults, ...leadResults].slice(0, 8);
+  }, [normalizedSearchQuery, courses, students, invoices, employees, leads]);
 
   return (
     <DataContext.Provider
@@ -245,10 +391,14 @@ export function DataProvider({ children }) {
         updateLeadStatus,
         notifications,
         addNotificationLocal,
+        markNotificationRead,
         markAllNotificationsRead,
+        preferences,
+        updatePreference,
         conversations,
         searchQuery,
         setSearchQuery,
+        searchResults,
       }}
     >
       {children}

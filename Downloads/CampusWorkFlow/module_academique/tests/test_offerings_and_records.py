@@ -6,7 +6,7 @@ def full_context(client):
     """Construit une chaîne complète : faculté -> département -> programme,
     module -> cours, campus -> bâtiment -> salle, année -> semestre,
     utilisateur enseignant + utilisateur étudiant."""
-    faculty = client.post("/faculties/", json={"name": "Sciences", "code": "FAC-SCI"}).json()
+    faculty = client.post("/faculties/", json={"name": "Sciences"}).json()
     department = client.post(
         "/departments/", json={"name": "Info", "faculty_id": faculty["faculty_id"]}
     ).json()
@@ -15,37 +15,20 @@ def full_context(client):
         json={"name": "Licence Info", "level": "L2", "department_id": department["department_id"]},
     ).json()
 
-    module = client.post(
-        "/modules/", json={"code": "MOD-DB", "title": "Bases de données", "credits_ects": 6}
-    ).json()
     course = client.post(
         "/courses/",
-        json={"code": "CRS-DB1", "title": "SQL avancé", "credits": 3, "module_id": module["module_id"]},
+        json={"code": "CRS-DB1", "title": "SQL avancé", "credits": 3},
     ).json()
 
-    campus = client.post(
-        "/campuses/", json={"name": "Campus Principal", "city": "Yaoundé"}
-    ).json()
-    building = client.post(
-        "/buildings/", json={"name": "Bâtiment A", "code": "BAT-A", "campus_id": campus["campus_id"]}
-    ).json()
-    room = client.post(
-        "/rooms/",
-        json={"room_number": "101", "capacity": 30, "room_type": "TD", "building_id": building["building_id"]},
-    ).json()
-
-    academic_year = client.post(
-        "/academic-years/",
-        json={"start_date": "2025-09-01", "end_date": "2026-07-31", "year_label": "2025-2026"},
-    ).json()
+    # semester stores academic_year as varchar in SQL
     semester = client.post(
         "/semesters/",
         json={
+            "academic_year": "2025-2026",
             "term_name": "Semestre 1",
             "start_date": "2025-09-01",
             "end_date": "2026-01-31",
             "is_locked": False,
-            "academic_year_id": academic_year["academic_year_id"],
         },
     ).json()
 
@@ -55,7 +38,7 @@ def full_context(client):
     ).json()
     teacher = client.post(
         "/teachers/",
-        json={"employee_code": "EMP-100", "speciality": "BDD", "user_id": teacher_user["user_id"]},
+        json={"name": "Prof Martin", "email": "prof.martin@example.com", "user_id": teacher_user["user_id"]},
     ).json()
 
     student_user = client.post(
@@ -87,56 +70,28 @@ def test_course_offering_creation(client, full_context):
     resp = client.post(
         "/course-offerings/",
         json={
-            "name": "SQL avancé - Groupe A",
-            "campus_id": full_context["campus"]["campus_id"],
+            "room": "101",
+            "capacity": 30,
             "teacher_id": full_context["teacher"]["teacher_id"],
             "course_id": full_context["course"]["course_id"],
             "semester_id": full_context["semester"]["semester_id"],
         },
     )
     assert resp.status_code == 201
-    assert resp.json()["name"] == "SQL avancé - Groupe A"
+    assert resp.json()["course_id"] == full_context["course"]["course_id"]
 
 
 def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
     offering = client.post(
         "/course-offerings/",
         json={
-            "name": "SQL avancé - Groupe A",
-            "campus_id": full_context["campus"]["campus_id"],
+            "room": "101",
+            "capacity": 30,
             "teacher_id": full_context["teacher"]["teacher_id"],
             "course_id": full_context["course"]["course_id"],
             "semester_id": full_context["semester"]["semester_id"],
         },
     ).json()
-
-    # Emploi du temps
-    schedule = client.post(
-        "/class-schedules/",
-        json={
-            "day_of_week": "Monday",
-            "start_time": "08:00:00",
-            "end_time": "10:00:00",
-            "room_id": full_context["room"]["room_id"],
-            "course_offering_id": offering["course_offering_id"],
-        },
-    )
-    assert schedule.status_code == 201
-    schedule = schedule.json()
-
-    # Refus si start_time >= end_time
-    bad_schedule = client.post(
-        "/class-schedules/",
-        json={
-            "day_of_week": "Monday",
-            "start_time": "10:00:00",
-            "end_time": "08:00:00",
-            "room_id": full_context["room"]["room_id"],
-            "course_offering_id": offering["course_offering_id"],
-        },
-    )
-    assert bad_schedule.status_code == 400
-
     # Examen
     exam = client.post(
         "/exams/",
@@ -191,25 +146,12 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
     assert grade.status_code == 201
     assert grade.json()["score"] == "15.50"
 
-    # Séance
-    session = client.post(
-        "/sessions/",
-        json={
-            "session_date": "2025-09-08",
-            "status": "Completed",
-            "topic_covered": "Introduction au SQL",
-            "schedule_id": schedule["schedule_id"],
-        },
-    )
-    assert session.status_code == 201
-    session = session.json()
-
-    # Présence
+    # Présence (attendance records session_date + enrollment_id in SQL)
     attendance = client.post(
         "/attendances/",
         json={
+            "session_date": "2025-09-08",
             "status": "Present",
-            "session_id": session["session_id"],
             "enrollment_id": enrollment["enrollment_id"],
         },
     )

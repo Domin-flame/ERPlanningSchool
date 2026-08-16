@@ -3,6 +3,7 @@ import os
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional
+import re
 
 from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -171,6 +172,8 @@ def register(payload: UserCreate, session: Session = Depends(get_session)):
     if existing:
         raise HTTPException(status_code=409, detail="Email déjà enregistré")
 
+    # Enforce password complexity
+    validate_password_complexity(payload.password)
     hashed = _hash_password(payload.password)
     row = session.execute(
         text(
@@ -183,6 +186,42 @@ def register(payload: UserCreate, session: Session = Depends(get_session)):
     session.commit()
     return UserRead(id=int(row[0]), full_name=row[1], email=row[2], role=row[3])
 
+SPECIAL_CHARS_PATTERN = re.compile(r"[/*\-@#]")
+
+def validate_password_complexity(password: str) -> None:
+    """
+    Vérifie les critères de sécurité du mot de passe ERP :
+    - Au moins 8 caractères
+    - Au moins 1 majuscule
+    - Au moins 1 minuscule
+    - Au moins 1 chiffre
+    - Au moins 1 caractère spécial parmi : / * - @ #
+    """
+    if len(password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le mot de passe doit contenir au moins 8 caractères."
+        )
+    if not re.search(r"[A-Z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le mot de passe doit contenir au moins une lettre majuscule."
+        )
+    if not re.search(r"[a-z]", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le mot de passe doit contenir au moins une lettre minuscule."
+        )
+    if not re.search(r"\d", password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le mot de passe doit contenir au moins un chiffre."
+        )
+    if not SPECIAL_CHARS_PATTERN.search(password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le mot de passe doit contenir au moins un caractère spécial parmi : /*-@#"
+        )
 
 # ── Login ─────────────────────────────────────────────────────
 
@@ -282,8 +321,8 @@ def change_password(
     user: UserRead = Depends(_get_current_user),
     session: Session = Depends(get_session),
 ):
-    if len(new_password) < 8:
-        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 8 caractères")
+    # Enforce password complexity for new password
+    validate_password_complexity(new_password)
 
     row = session.execute(
         text("SELECT hashed_password FROM user_account WHERE id = :id"), {"id": user.id}
@@ -335,8 +374,8 @@ def confirm_password_reset(
     """
     Étape 2 : confirmation du reset avec le token reçu par email.
     """
-    if len(payload.new_password) < 8:
-        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 8 caractères")
+    # Enforce password complexity for reset
+    validate_password_complexity(payload.new_password)
 
     email = get_reset_email(payload.token)
     if not email:

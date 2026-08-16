@@ -1,0 +1,5 @@
+il faut créer un module admission qui permet de valider l'inscription de nouveau étudiant, d'ajouter un nouvel étudiant pour passer le flambeau aux autres services en ce qui concerne le sort de l'étudiant, le module admission crée les emails et matricule étudiant, il peut modifier les informations de connexion d'un étudiant, c'est à lui qu'on envoie la demande lorsqu'on a oublié notre mot de passe et que l'on souhaite le reset
+
+ca m'améne à penser que c'est les membres du service rh qui s'occupe de valider les inscriptions des autres utilisateurs de la plateforme avec un superadmin dans celui-ci qui peut ajouter d'autres utilisateurs au module rh, donc lorsqu'on crée un compte il n'est pas approuvé directement mais passe d'abord par le module rh si on n'est pas student et par le module admission si on est student 
+et lorsque le compte est créé 
+c'est le module d'admission qui donne les certificats de scolarité et met à jour le réglement intérieur des étudiants

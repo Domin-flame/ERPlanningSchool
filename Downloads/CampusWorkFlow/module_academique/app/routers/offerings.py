@@ -8,13 +8,11 @@ from app.crud import CRUDBase
 from app.database import get_db
 from app.routers.academic_structure import course_crud
 from app.routers.calendar import semester_crud
-from app.routers.infrastructure import campus_crud, room_crud
 from app.routers.people import teacher_crud
 
 router = APIRouter(tags=["Course Offerings"])
 
 course_offering_crud = CRUDBase(models.CourseOffering, "course_offering_id")
-class_schedule_crud = CRUDBase(models.ClassSchedule, "schedule_id")
 exam_crud = CRUDBase(models.Exam, "exam_id")
 
 
@@ -23,9 +21,7 @@ exam_crud = CRUDBase(models.Exam, "exam_id")
 # ---------------------------------------------------------------------------
 @router.post("/course-offerings/", response_model=schemas.CourseOfferingRead, status_code=status.HTTP_201_CREATED)
 def create_course_offering(payload: schemas.CourseOfferingCreate, db: Session = Depends(get_db)):
-    if not campus_crud.get(db, payload.campus_id):
-        raise HTTPException(status_code=404, detail="Campus introuvable")
-    if not teacher_crud.get(db, payload.teacher_id):
+    if payload.teacher_id and not teacher_crud.get(db, payload.teacher_id):
         raise HTTPException(status_code=404, detail="Enseignant introuvable")
     if not course_crud.get(db, payload.course_id):
         raise HTTPException(status_code=404, detail="Cours introuvable")
@@ -63,47 +59,7 @@ def delete_course_offering(course_offering_id: int, db: Session = Depends(get_db
     course_offering_crud.remove(db, course_offering_id)
 
 
-# ---------------------------------------------------------------------------
-# Class_schedule
-# ---------------------------------------------------------------------------
-@router.post("/class-schedules/", response_model=schemas.ClassScheduleRead, status_code=status.HTTP_201_CREATED)
-def create_class_schedule(payload: schemas.ClassScheduleCreate, db: Session = Depends(get_db)):
-    if not room_crud.get(db, payload.room_id):
-        raise HTTPException(status_code=404, detail="Salle introuvable")
-    if not course_offering_crud.get(db, payload.course_offering_id):
-        raise HTTPException(status_code=404, detail="Offre de cours introuvable")
-    if payload.start_time >= payload.end_time:
-        raise HTTPException(status_code=400, detail="start_time doit être antérieur à end_time")
-    return class_schedule_crud.create(db, payload.model_dump())
-
-
-@router.get("/class-schedules/", response_model=List[schemas.ClassScheduleRead])
-def list_class_schedules(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return class_schedule_crud.get_multi(db, skip, limit)
-
-
-@router.get("/class-schedules/{schedule_id}", response_model=schemas.ClassScheduleRead)
-def get_class_schedule(schedule_id: int, db: Session = Depends(get_db)):
-    obj = class_schedule_crud.get(db, schedule_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Créneau introuvable")
-    return obj
-
-
-@router.put("/class-schedules/{schedule_id}", response_model=schemas.ClassScheduleRead)
-def update_class_schedule(schedule_id: int, payload: schemas.ClassScheduleUpdate, db: Session = Depends(get_db)):
-    obj = class_schedule_crud.get(db, schedule_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Créneau introuvable")
-    return class_schedule_crud.update(db, obj, payload.model_dump(exclude_unset=True))
-
-
-@router.delete("/class-schedules/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_class_schedule(schedule_id: int, db: Session = Depends(get_db)):
-    obj = class_schedule_crud.get(db, schedule_id)
-    if not obj:
-        raise HTTPException(status_code=404, detail="Créneau introuvable")
-    class_schedule_crud.remove(db, schedule_id)
+# Note: class schedule endpoints removed — not present in the authoritative SQL schema
 
 
 # ---------------------------------------------------------------------------

@@ -1,12 +1,13 @@
 # CampusWorkflow ERP — Frontend React
 
-Frontend React pour **CampusWorkflow**, un ERP scolaire unifié, inspiré des wireframes
-(mascotte renard orange vif + blanc, navigation en bas d'écran, écran de connexion
-asymétrique, splash screen, onboarding, dashboards, etc.).
+Frontend React pour **CampusWorkflow**, un ERP scolaire unifié
 
 ## 🚀 Démarrage rapide (dev)
 
 ```bash
+# Se placer dans le bon dossier 
+cd frontend
+
 # Installer les dépendances
 npm install
 
@@ -25,25 +26,15 @@ Le route par défaut est `/splash`. Vous pouvez accéder directement à :
 
 ## 🐳 Build & Docker
 
-Le frontend est **dockerisé** et prêt à être lié au backend plus tard.
+Le frontend est **dockerisé** 
 
 ```bash
-# Construire et lancer (frontend sur :8080, backend placeholder sur :8000)
+# Construire et lancer (frontend sur :5174)
 docker compose up --build
 ```
 
-- Frontend : http://localhost:8080
-- Backend (placeholder) : http://localhost:8000/api/api.json
+- Frontend : http://localhost:5174
 
-### Comment brancher le vrai backend
-
-1. **Option A — backend dans le même docker-compose** : remplacez le service
-   `backend` par votre image réelle (voir `docker-compose.yml`).
-2. **Option B — backend externe** : changez l'argument de build
-   `BACKEND_UPSTREAM` dans `docker-compose.yml` (ex. `http://mon-backend:8000`).
-
-Le reverse-proxy nginx (dans le conteneur) route `/api/*` vers le backend.
-Le client API (`src/api/client.js`) utilise `/api` par défaut, ou `VITE_API_URL`.
 
 ## 🔌 Structure du code
 
@@ -51,8 +42,7 @@ Le client API (`src/api/client.js`) utilise `/api` par défaut, ou `VITE_API_URL
 src/
   main.jsx            # Point d'entrée React
   App.jsx             # Routage
-  api/client.js       # Client API (axios) — à connecter au backend
-  data/mock.js        # Données mockées (fallback)
+  api/client.js       # Client API (axios) — à connecter 
   components/         # Composants UI réutilisables
     Layout.jsx        # Shell : topbar, sidebar (desktop), bottom tabs (mobile)
     FoxMascot.jsx     # Mascotte renard (SVG)
@@ -67,8 +57,7 @@ src/
 
 ## 🔑 Connexion au backend
 
-Le client API centralisé est dans `src/api/client.js`. Les données sont
-actuellement mockées (`src/data/mock.js`). Pour brancher le backend :
+Le client API centralisé est dans `src/api/client.js`. Pour brancher le backend :
 
 ```javascript
 // Exemple dans un composant
@@ -91,8 +80,3 @@ await api.post("/courses", { title: "CS101" });
 | `npm run preview` | Prévisualiser le build |
 | `docker compose up --build` | Lancer via Docker |
 
-## 📁 Backend placeholder
-
-Le dossier `backend-stub/` contient une réponse JSON factice servie par le
-service `backend` du docker-compose, pour valider la liaison frontend↔backend.
-Supprimez-le quand le vrai backend est en place.

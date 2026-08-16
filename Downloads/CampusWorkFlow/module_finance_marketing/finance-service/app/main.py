@@ -7,6 +7,7 @@ from sqlmodel import Session, SQLModel, select
 
 from . import momo
 from .database import engine, get_session
+from .auth import get_current_user, require_roles
 from .models import (
     Campaign,
     CampaignCreate,
@@ -104,7 +105,7 @@ def upsert_student_ref(student: StudentRef, session: Session = Depends(get_sessi
 # Facturation
 # ---------------------------------------------------------------------------
 @app.post("/invoices", tags=["invoices"], status_code=201)
-def create_invoice(payload: InvoiceCreate, session: Session = Depends(get_session_with_auth)):
+def create_invoice(payload: InvoiceCreate, session: Session = Depends(get_session_with_auth), user=Depends(require_roles(["finance", "staff", "admin"]))):
     student = session.get(StudentRef, payload.id_student)
     if not student:
         raise HTTPException(404, "Étudiant introuvable dans le cache finance (student_ref)")
@@ -139,13 +140,13 @@ def create_invoice(payload: InvoiceCreate, session: Session = Depends(get_sessio
 
 
 @app.get("/invoices", tags=["invoices"])
-def list_invoices(session: Session = Depends(get_session_with_auth)):
+def list_invoices(session: Session = Depends(get_session_with_auth), user=Depends(require_roles(["finance", "staff", "admin"]))):
     """Liste toutes les factures — utilisé par le portail Finance."""
     return session.exec(select(Invoice)).all()
 
 
 @app.get("/invoices/{invoice_id}", tags=["invoices"])
-def get_invoice(invoice_id: int, session: Session = Depends(get_session_with_auth)):
+def get_invoice(invoice_id: int, session: Session = Depends(get_session_with_auth), user=Depends(get_current_user)):
     invoice = session.get(Invoice, invoice_id)
     if not invoice:
         raise HTTPException(404, "Facture introuvable")

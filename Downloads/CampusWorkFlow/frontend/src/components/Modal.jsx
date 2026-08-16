@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 
+// faire des recherches pour déterminer à quoi sert ce modal dans le code 
 /**
  * Modal centré avec overlay, header (titre + fermer), corps et footer.
  */

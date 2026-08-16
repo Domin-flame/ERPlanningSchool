@@ -2,7 +2,8 @@ import axios from "axios";
 
 const BASE_URL =
   import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" ? "/api" : "http://localhost:3000/api");
+  import.meta.env.VITE_BACKEND_URL ||
+  "http://localhost:3000/api";
 
 const http = axios.create({
   baseURL: BASE_URL,

@@ -1,11 +1,7 @@
 import React, { useState, useSyncExternalStore } from "react";
 
 /**
- * Mascotte renard (orange vif + blanc) utilisée sur la splash screen,
- * l'onboarding, le login et les états vides.
- * Version image (remplace l'ancien rendu SVG géométrique).
- *
- * ---------------------------------------------------------------
+ ---------------------------------------------------------------
  * ORGANISATION DES ASSETS ATTENDUE
  * ---------------------------------------------------------------
  * src/assets/mascots/fox-default.png
@@ -22,9 +18,11 @@ import React, { useState, useSyncExternalStore } from "react";
 
 import foxDefault from "../assets/mascote2_cwf.png";
 import foxWave from "../assets/mascote_cwf.png";
-import foxSleep from "../assets/mascots/fox-sleep.png";
-import foxEmpty from "../assets/mascots/fox-empty.png";
-import foxError from "../assets/mascots/fox-error.png";
+// Some mascot variants may be missing in this repo (packaging/build). Use
+// existing images as sensible fallbacks to avoid build failures.
+const foxSleep = foxWave;
+const foxEmpty = foxDefault;
+const foxError = foxDefault;
 
 // ---------------------------------------------------------------
 // REGISTRE DE VARIANTES
@@ -36,7 +34,7 @@ import foxError from "../assets/mascots/fox-error.png";
 const variantRegistry = {
   default: foxDefault,
   wave: foxWave,
-  sleep: foxSleep,
+  sleep: foxSleep, // fallback to wave if specific asset missing
   empty: foxEmpty,
   error: foxError,
 };
@@ -121,3 +119,6 @@ export default function FoxMascot({
     />
   );
 }
+// il faut que j'ajoute les images manquantes de la mascote dans tous les états nécessaires pour le système 
+// ajouter des animations 2d de celle ci pour qu'elle soit plus attrayante
+// la mascote va servir d'icone pour l'ia à implémenter plus tard 
