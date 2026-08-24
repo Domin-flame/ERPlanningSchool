@@ -1,0 +1,4 @@
+FROM postgres:15-alpine
+COPY finance_schema_tables.sql /docker-entrypoint-initdb.d/01_schema.sql
+COPY donnees_test_finance.sql /docker-entrypoint-initdb.d/02_seed.sql
+RUN chmod 0444 /docker-entrypoint-initdb.d/* || true

@@ -1,0 +1,40 @@
+# Dependencies & Virtualenvs
+node_modules/
+.venv/
+venv/
+env/
+
+# Python caches & build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+*.db
+*.sqlite3
+
+# Git & IDEs
+.git/
+.gitignore
+.vscode/
+.idea/
+.qodo/
+
+# Frontend builds & caches
+frontend/dist/
+frontend/.vite/
+frontend/node_modules/
+gateway/node_modules/
+
+# Documents & large media files
+*.pdf
+academique.pdf
+finance.pdf
+*.png
+campusworkflow.png
+
+# Logs & temp files
+*.log
+tmp_*
+.env
+.env.local
