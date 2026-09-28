@@ -107,6 +107,10 @@ const RBAC_RULES = [
   // HR — 'student' et 'marketing' n'ont aucun accès au module RH.
   { prefix: '/api/hr', allow: ['academic', 'rh', 'finance', 'professeur'] },
 
+  // Les étudiants peuvent créer uniquement leur propre inscription ; le
+  // service académique vérifie l'identité du propriétaire de student_id.
+  { prefix: '/api/academic/enrollments', methods: new Set(['POST']), allow: ['academic', 'student'] },
+
   // Académique — lecture ouverte à tous les rôles authentifiés (portails
   // Dashboard/Analytics en ont besoin) ; écriture réservée à la Direction
   // (academic) et aux enseignants (ex : saisie de notes / présences).
@@ -124,11 +128,12 @@ const RBAC_RULES = [
 function rbacGuard(req, res, next) {
   if (!req.user) return next(); // routes publiques déjà filtrées par verifyToken
 
-  const rule = RBAC_RULES.find((r) => req.originalUrl.startsWith(r.prefix));
+  const rule = RBAC_RULES.find(
+    (r) =>
+      req.originalUrl.startsWith(r.prefix) &&
+      (!r.methods || r.methods.has(req.method))
+  );
   if (!rule) return next();
-
-  const methodGuarded = !rule.methods || rule.methods.has(req.method);
-  if (!methodGuarded) return next();
 
   const role = (req.user.role || '').toLowerCase();
   if (!rule.allow.includes(role)) {

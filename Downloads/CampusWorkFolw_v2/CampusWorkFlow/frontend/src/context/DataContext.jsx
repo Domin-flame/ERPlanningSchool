@@ -194,7 +194,7 @@ export function DataProvider({ children }) {
         type: "course",
       });
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible de créer le cours");
+      throw new Error(err.response?.data?.detail || "Impossible de créer le cours", { cause: err });
     }
   };
 
@@ -203,7 +203,7 @@ export function DataProvider({ children }) {
       await api.delete(`/academic/courses/${courseId}`);
       setCourses((prev) => prev.filter((c) => c.course_id !== courseId && c.code !== courseId));
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible de supprimer le cours");
+      throw new Error(err.response?.data?.detail || "Impossible de supprimer le cours", { cause: err });
     }
   };
 
@@ -218,7 +218,7 @@ export function DataProvider({ children }) {
         type: "student",
       });
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible d'inscrire l'étudiant");
+      throw new Error(err.response?.data?.detail || "Impossible d'inscrire l'étudiant", { cause: err });
     }
   };
 
@@ -227,7 +227,7 @@ export function DataProvider({ children }) {
       const res = await api.put(`/academic/students/${id}`, { status: newStatus });
       setStudents((prev) => prev.map((s) => (s.student_id === id || s.id === id ? { ...s, ...res.data } : s)));
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible de mettre à jour le statut");
+      throw new Error(err.response?.data?.detail || "Impossible de mettre à jour le statut", { cause: err });
     }
   };
 
@@ -236,7 +236,7 @@ export function DataProvider({ children }) {
       await api.delete(`/academic/students/${id}`);
       setStudents((prev) => prev.filter((s) => s.student_id !== id && s.id !== id));
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible de supprimer l'étudiant");
+      throw new Error(err.response?.data?.detail || "Impossible de supprimer l'étudiant", { cause: err });
     }
   };
 
@@ -251,7 +251,7 @@ export function DataProvider({ children }) {
         type: "hr",
       });
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible d'ajouter l'employé");
+      throw new Error(err.response?.data?.detail || "Impossible d'ajouter l'employé", { cause: err });
     }
   };
 
@@ -266,7 +266,7 @@ export function DataProvider({ children }) {
         type: "finance",
       });
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible de créer la facture");
+      throw new Error(err.response?.data?.detail || "Impossible de créer la facture", { cause: err });
     }
   };
 
@@ -275,7 +275,7 @@ export function DataProvider({ children }) {
       const res = await api.patch(`/finance/invoices/${id}`, { status: "Payée" });
       setInvoices((prev) => prev.map((inv) => (inv.id_invoice === id || inv.id === id ? { ...inv, ...res.data } : inv)));
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible de marquer la facture comme payée");
+      throw new Error(err.response?.data?.detail || "Impossible de marquer la facture comme payée", { cause: err });
     }
   };
 
@@ -285,7 +285,7 @@ export function DataProvider({ children }) {
       const res = await api.post("/marketing/leads", newLead);
       setLeads((prev) => [res.data, ...prev]);
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible d'ajouter le lead");
+      throw new Error(err.response?.data?.detail || "Impossible d'ajouter le lead", { cause: err });
     }
   };
 
@@ -294,7 +294,7 @@ export function DataProvider({ children }) {
       const res = await api.patch(`/marketing/leads/${id}`, { status });
       setLeads((prev) => prev.map((l) => (l.id_lead === id || l.id === id ? { ...l, ...res.data } : l)));
     } catch (err) {
-      throw new Error(err.response?.data?.detail || "Impossible de mettre à jour le lead");
+      throw new Error(err.response?.data?.detail || "Impossible de mettre à jour le lead", { cause: err });
     }
   };
 

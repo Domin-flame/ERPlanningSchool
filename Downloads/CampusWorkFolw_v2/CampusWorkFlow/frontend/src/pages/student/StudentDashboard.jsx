@@ -64,7 +64,7 @@ export default function StudentDashboard() {
         actions={
           <>
             <Link className="btn" to="/student/transcript">📜 Relevé de notes</Link>
-            <Link className="btn primary" to="/courses">📚 Consulter les cours</Link>
+            <Link className="btn primary" to="/student/courses">📚 Consulter les cours</Link>
           </>
         }
       />
@@ -154,8 +154,8 @@ export default function StudentDashboard() {
           <div className="panel card-interactive" style={{ padding: 20 }}>
             <h3>Actions rapides</h3>
             <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
-              <Link className="btn" style={{ justifyContent: "flex-start" }} to="/courses">
-                📚 Voir le catalogue des cours
+              <Link className="btn" style={{ justifyContent: "flex-start" }} to="/student/courses">
+                📚 Catalogue et inscriptions
               </Link>
               <Link className="btn" style={{ justifyContent: "flex-start" }} to="/messages">
                 💬 Contacter l'administration

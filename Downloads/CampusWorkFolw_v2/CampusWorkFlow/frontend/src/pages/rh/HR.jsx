@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
 import PageHeader from "../../components/PageHeader.jsx";
 import StatCard from "../../components/StatCard.jsx";
-import Badge from "../../components/Badge.jsx";
 import Modal from "../../components/Modal.jsx";
 import Toast from "../../components/Toast.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
@@ -106,7 +105,7 @@ export default function HR() {
     window.setTimeout(() => setToastShow(false), 3500);
   };
 
-  const loadHRDashboard = async () => {
+  const loadHRDashboard = useCallback(async () => {
     if (!user) return;
 
     setLeaveLoading(true);
@@ -141,11 +140,11 @@ export default function HR() {
 
     setLeaveLoading(false);
     setUsersLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
-    if (user) loadHRDashboard();
-  }, [user]);
+    loadHRDashboard();
+  }, [loadHRDashboard]);
 
   const resetForm = () => {
     setAuthUserId("");

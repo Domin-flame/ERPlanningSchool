@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
-import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
+import { SkeletonList } from "../../components/Skeleton.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import api from "../../api/client.js";
 

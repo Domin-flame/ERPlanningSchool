@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -19,14 +19,31 @@ session_crud = CRUDBase(models.ClassSession, "session_id")
 attendance_crud = CRUDBase(models.Attendance, "attendance_id")
 
 
+def _authorize_enrollment(student: models.Student, user_id: int, role: str) -> None:
+    normalized_role = role.lower()
+    if normalized_role == "academic":
+        return
+    if normalized_role != "student":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Rôle non autorisé à inscrire un étudiant")
+    if student.user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vous ne pouvez créer que votre propre inscription")
+
+
 # ---------------------------------------------------------------------------
 # Enrollment
 # ---------------------------------------------------------------------------
 @router.post("/enrollments/", response_model=schemas.EnrollmentRead, status_code=status.HTTP_201_CREATED)
-def create_enrollment(payload: schemas.EnrollmentCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def create_enrollment(
+    payload: schemas.EnrollmentCreate,
+    background_tasks: BackgroundTasks,
+    x_user_id: int = Header(..., alias="X-User-ID"),
+    x_user_role: str = Header(..., alias="X-User-Role"),
+    db: Session = Depends(get_db),
+):
     student = student_crud.get(db, payload.student_id)
     if not student:
         raise HTTPException(status_code=404, detail="Étudiant introuvable")
+    _authorize_enrollment(student, x_user_id, x_user_role)
     offering = course_offering_crud.get(db, payload.course_offering_id)
     if not offering:
         raise HTTPException(status_code=404, detail="Offre de cours introuvable")

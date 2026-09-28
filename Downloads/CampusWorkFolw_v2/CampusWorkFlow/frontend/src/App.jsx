@@ -14,6 +14,7 @@ import Dashboard from "./pages/academic/Dashboard.jsx";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/student/StudentDashboard.jsx";
 import Transcript from "./pages/student/Transcript.jsx";
+import StudentCourseCatalog from "./pages/student/StudentCourseCatalog.jsx";
 import MarketingDashboard from "./pages/finance/MarketingDashboard.jsx";
 import HR from "./pages/rh/HR.jsx";
 import Finance from "./pages/finance/Finance.jsx";
@@ -76,6 +77,10 @@ function MainRoutes() {
         <Route
           path="/student/transcript"
           element={roleRoute("/student/transcript", <Transcript />)}
+        />
+        <Route
+          path="/student/courses"
+          element={roleRoute("/student/courses", <StudentCourseCatalog />)}
         />
         <Route
           path="/marketing"

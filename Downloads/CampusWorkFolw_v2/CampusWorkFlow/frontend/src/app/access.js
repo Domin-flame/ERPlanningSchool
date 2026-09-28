@@ -41,6 +41,7 @@ export const ROUTE_ACCESS = {
   "/professeur": ["professeur", "academic"],
   "/student": ["student", "academic"],
   "/student/transcript": ["student"],
+  "/student/courses": ["student"],
   "/marketing": ["marketing", "academic"],
   "/finance": ["finance", "academic"],
   "/hr": ["rh", "academic"],
@@ -81,7 +82,7 @@ const ROLE_NAVIGATION = {
   student: {
     portals: [{ to: "/student", label: "Mon Espace Étudiant", icon: GraduationCap, end: true }],
     tools: [
-      { to: "/courses", label: "Mes Cours Inscrits", icon: BookOpen },
+      { to: "/student/courses", label: "Catalogue & inscriptions", icon: BookOpen },
       { to: "/student/transcript", label: "Mon relevé de notes", icon: FileText },
       { to: "/calendar", label: "Mon Emploi du Temps", icon: CalendarDays },
       { to: "/messages", label: "Contacter Enseignant", icon: MessageSquare },

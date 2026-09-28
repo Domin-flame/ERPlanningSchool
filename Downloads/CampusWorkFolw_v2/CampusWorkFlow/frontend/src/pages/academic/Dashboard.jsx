@@ -5,11 +5,9 @@ import PageHeader from "../../components/PageHeader.jsx";
 import StatCard from "../../components/StatCard.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const { courses, students, loading, errors } = useData();
   const navigate = useNavigate();
 

@@ -247,7 +247,7 @@ export default function CalendarPage() {
           [selectedDateISO]: [...existing, normalized],
         };
       });
-    } catch (err) {
+    } catch {
       setEvents((prev) => {
         const item = normalizeEvent({ ...payload, id: `local-${Date.now()}` }, "personal");
         return {
