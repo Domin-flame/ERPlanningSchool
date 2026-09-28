@@ -221,6 +221,23 @@ a:hover {
   gap: 10px;
 }
 
+.sidebar-user {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-user strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user .role-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
 .avatar {
   width: 38px;
   height: 38px;
@@ -247,6 +264,31 @@ a:hover {
   min-width: 0;
   min-height: 100vh;
   padding-bottom: 0;
+}
+
+.app-mobile-header {
+  display: none;
+}
+
+.route-loading {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.route-loading span {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--line);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: route-spin 800ms linear infinite;
+}
+
+@keyframes route-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .topbar {
@@ -4128,6 +4170,16 @@ label textarea {
 
   .hamburger {
     display: block;
+  }
+
+  .app-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
   }
 
   .topbar {

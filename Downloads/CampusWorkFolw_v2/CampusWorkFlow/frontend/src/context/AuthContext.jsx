@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import api from "../api/client.js";
 
 const AuthContext = createContext();
@@ -29,31 +29,15 @@ function msUntilExpiry(token) {
   return payload.exp * 1000 - Date.now();
 }
 
-function validatePassword(password) {
-  const rules = [
-    { valid: password.length >= 8, message: "au moins 8 caractÃ¨res" },
-    { valid: /[A-Z]/.test(password), message: "une majuscule" },
-    { valid: /[a-z]/.test(password), message: "une minuscule" },
-    { valid: /\d/.test(password), message: "un chiffre" },
-    { valid: /[/*@#._!$%^&+=-]/.test(password), message: "un caractÃ¨re spÃ©cial" },
-  ];
-  const missing = rules.filter((rule) => !rule.valid).map((rule) => rule.message);
-  return {
-    valid: missing.length === 0,
-    message: missing.length ? `Le mot de passe doit contenir ${missing.join(", ")}.` : "",
-  };
-}
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // true au démarrage = vérification du token stocké
-  const refreshTimerRef = useRef(null);
 
-  // ----- Helpers de persistance -----
   const persistSession = useCallback((userData, accessToken, refreshToken) => {
     localStorage.setItem("cw_user", JSON.stringify(userData));
     localStorage.setItem("cw_token", accessToken);
     if (refreshToken) localStorage.setItem("cw_refresh_token", refreshToken);
+    else localStorage.removeItem("cw_refresh_token");
     setUser(userData);
   }, []);
 
@@ -62,121 +46,76 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("cw_token");
     localStorage.removeItem("cw_refresh_token");
     setUser(null);
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
   }, []);
 
-  // ----- Refresh silencieux du token -----
-  const scheduleRefresh = useCallback((accessToken) => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-
-    const delay = msUntilExpiry(accessToken) - REFRESH_MARGIN_MS;
-    if (delay <= 0) {
-      // Token déjà expiré ou expire dans moins de REFRESH_MARGIN_MS → refresh immédiat
-      performRefresh();
-      return;
-    }
-
-    refreshTimerRef.current = setTimeout(performRefresh, delay);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const performRefresh = useCallback(async () => {
-    const refreshToken = localStorage.getItem("cw_refresh_token");
-    if (!refreshToken) {
-      clearSession();
-      return;
-    }
-
-    try {
-      const res = await api.post("/auth/refresh", { refresh_token: refreshToken });
-      const { access_token, refresh_token: newRefresh } = res.data;
-
-      localStorage.setItem("cw_token", access_token);
-      if (newRefresh) localStorage.setItem("cw_refresh_token", newRefresh);
-
-      scheduleRefresh(access_token);
-    } catch {
-      // Refresh échoué → déconnexion propre
-      clearSession();
-      window.dispatchEvent(new CustomEvent("cw:session-expired"));
-    }
-  }, [clearSession, scheduleRefresh]);
-
-  // ----- Initialisation : restaurer la session depuis localStorage -----
   useEffect(() => {
     const restoreSession = async () => {
       const storedToken = localStorage.getItem("cw_token");
       const storedUser = localStorage.getItem("cw_user");
 
       if (!storedToken || !storedUser) {
-        setLoading(false);
-        return;
-      }
-
-      const remaining = msUntilExpiry(storedToken);
-
-      if (remaining > REFRESH_MARGIN_MS) {
-        // Token encore valide — restaurer directement
-        try {
-          setUser(JSON.parse(storedUser));
-          scheduleRefresh(storedToken);
-        } catch {
-          clearSession();
-        }
-        setLoading(false);
-        return;
-      }
-
-      // Token expiré ou sur le point d'expirer → tenter le refresh
-      const refreshToken = localStorage.getItem("cw_refresh_token");
-      if (!refreshToken) {
         clearSession();
         setLoading(false);
         return;
       }
 
       try {
+        const storedUserData = JSON.parse(storedUser);
+        if (!storedUserData || typeof storedUserData !== "object") {
+          throw new Error("Invalid stored user");
+        }
+
+        if (msUntilExpiry(storedToken) > REFRESH_MARGIN_MS) {
+          setUser(storedUserData);
+          return;
+        }
+
+        const refreshToken = localStorage.getItem("cw_refresh_token");
+        if (!refreshToken) {
+          clearSession();
+          return;
+        }
+
         const res = await api.post("/auth/refresh", { refresh_token: refreshToken });
-        const { access_token, refresh_token: newRefresh } = res.data;
-        localStorage.setItem("cw_token", access_token);
-        if (newRefresh) localStorage.setItem("cw_refresh_token", newRefresh);
-        setUser(JSON.parse(storedUser));
-        scheduleRefresh(access_token);
+        const accessToken = res.data?.access_token;
+        if (!accessToken) throw new Error("Invalid refresh response");
+
+        localStorage.setItem("cw_token", accessToken);
+        if (res.data.refresh_token) {
+          localStorage.setItem("cw_refresh_token", res.data.refresh_token);
+        }
+        setUser(storedUserData);
       } catch {
         clearSession();
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     restoreSession();
 
-    // Écouter l'événement 401 émis par client.js
     const handleUnauthorized = () => clearSession();
     window.addEventListener("cw:unauthorized", handleUnauthorized);
 
     return () => {
       window.removeEventListener("cw:unauthorized", handleUnauthorized);
-      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     };
-  }, [clearSession, scheduleRefresh]);
+  }, [clearSession]);
 
-  // ----- Login -----
   const login = async (email, password) => {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password });
-      const { access_token, refresh_token, user: userData } = res.data;
+      const { access_token, refresh_token, user: userData } = res.data || {};
 
       if (!access_token || !userData) {
-        setLoading(false);
         return { success: false, message: "Réponse invalide du serveur" };
       }
 
       persistSession(userData, access_token, refresh_token);
-      scheduleRefresh(access_token);
 
       return { success: true, user: userData };
     } catch (err) {
-      console.error("Login error:", err);
       const message =
         err.response?.data?.detail ||
         err.response?.data?.message ||
@@ -188,35 +127,24 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // ----- Register -----
   const register = async (formData) => {
     setLoading(true);
     try {
       const { full_name, email, password, role } = formData;
 
-      // Validation côté client
-      if (!full_name || !email || !password || !role) {
+      if (!full_name?.trim() || !email?.trim() || !password || !role) {
         return { success: false, message: "Tous les champs sont requis" };
       }
-      // ajouter des contraintes tels que :
-      /* le mot de passe doit contenir au moins une majuscule
-      le mot de passe doit contenir au moins une minuscule 
-      le mot de passe doit contenir au moins un signe : /*-@#
-      le mot de passe doit contenir un chiffre 
-      */ 
       if (password.length < 8) {
         return { success: false, message: "Le mot de passe doit contenir au moins 8 caractères" };
       }
 
-      // Inscription sur le backend (payload aligné avec UserCreate du service auth)
-      await api.post("/auth/register", { full_name, email, password, role });
+      await api.post("/auth/register", { full_name: full_name.trim(), email: email.trim(), password, role });
 
-      // Connexion automatique après inscription réussie
       const loginResult = await login(email, password);
       if (loginResult.success) {
         return { success: true, user: loginResult.user };
       }
-      // Inscription réussie mais connexion auto échouée → rediriger vers login
       return { success: true, message: "Compte créé. Veuillez vous connecter." };
     } catch (err) {
       const message =
@@ -229,7 +157,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // ----- Logout -----
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
@@ -262,5 +189,3 @@ export function useAuth() {
   }
   return context;
 }
-
-// est ce que l'auth context est complet coompte tenu des modifications qu'il ya à faire au niveau du module d'authentification ? 

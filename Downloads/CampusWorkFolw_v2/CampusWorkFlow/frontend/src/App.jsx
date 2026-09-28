@@ -4,8 +4,9 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { DataProvider } from "./context/DataContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Layout from "./components/Layout.jsx";
+import { ROUTE_ACCESS } from "./app/access.js";
 
-import Splash from "./pages/auth/Splash.jsx";
+import EntryRedirect from "./pages/auth/EntryRedirect.jsx";
 import Login from "./pages/auth/Login.jsx";
 import Onboarding from "./pages/auth/Onboarding.jsx";
 
@@ -51,12 +52,11 @@ function HomeDashboard() {
 function MainRoutes() {
   return (
     <Routes>
-      {/* Écrans d'accueil / auth — publics */}
-      <Route path="/splash" element={<Splash />} />
+      {/* Routes publiques */}
+      <Route path="/splash" element={<EntryRedirect />} />
       <Route path="/login" element={<Login />} />
       <Route path="/onboarding" element={<Onboarding />} />
 
-      {/* Application principale avec Layout + auth obligatoire */}
       <Route
         element={
           <ProtectedRoute>
@@ -64,104 +64,60 @@ function MainRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* Dashboard dynamique selon le rôle — chaque rôle voit son propre dashboard */}
         <Route path="/" element={<HomeDashboard />} />
-
-        {/* Dashboards spécifiques aux rôles */}
         <Route
           path="/professeur"
-          element={
-            <ProtectedRoute allowedRoles={["professeur", "academic"]}>
-              <TeacherDashboard />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/professeur"]}><TeacherDashboard /></RoleRoute>}
         />
         <Route
           path="/student"
-          element={
-            <ProtectedRoute allowedRoles={["student", "academic"]}>
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/student"]}><StudentDashboard /></RoleRoute>}
         />
         <Route
           path="/student/transcript"
-          element={
-            <ProtectedRoute allowedRoles={["student"]}>
-              <Transcript />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/student/transcript"]}><Transcript /></RoleRoute>}
         />
         <Route
           path="/marketing"
-          element={
-            <ProtectedRoute allowedRoles={["marketing", "academic"]}>
-              <MarketingDashboard />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/marketing"]}><MarketingDashboard /></RoleRoute>}
         />
-        {/* Finance : UNIQUEMENT finance et direction — les étudiants n'ont pas accès */}
         <Route
           path="/finance"
-          element={
-            <ProtectedRoute allowedRoles={["finance", "academic"]}>
-              <Finance />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/finance"]}><Finance /></RoleRoute>}
         />
-        <Route
-          path="/hr"
-          element={
-            <ProtectedRoute allowedRoles={["rh", "academic"]}>
-              <HR />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Outils communs — accessibles selon la navigation de rôle définie dans Layout */}
+        <Route path="/hr" element={<RoleRoute allowedRoles={ROUTE_ACCESS["/hr"]}><HR /></RoleRoute>} />
         <Route
           path="/students"
-          element={
-            <ProtectedRoute allowedRoles={["academic", "professeur", "rh", "finance"]}>
-              <Students />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/students"]}><Students /></RoleRoute>}
         />
         <Route
           path="/courses"
-          element={
-            <ProtectedRoute allowedRoles={["academic", "professeur", "student", "rh"]}>
-              <Courses />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/courses"]}><Courses /></RoleRoute>}
         />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notification />} />
         <Route
           path="/analytics"
-          element={
-            <ProtectedRoute allowedRoles={["academic", "rh", "finance", "marketing"]}>
-              <Analytics />
-            </ProtectedRoute>
-          }
+          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/analytics"]}><Analytics /></RoleRoute>}
         />
         <Route path="/settings" element={<Settings />} />
       </Route>
 
-      {/* Toute route inconnue → login */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-export default function App() {
-  const [showSplash, setShowSplash] = React.useState(true);
+function RoleRoute({ allowedRoles, children }) {
+  return <ProtectedRoute allowedRoles={allowedRoles}>{children}</ProtectedRoute>;
+}
 
+export default function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        {showSplash ? <Splash onComplete={() => setShowSplash(false)} /> : <MainRoutes />}
+        <MainRoutes />
       </DataProvider>
     </AuthProvider>
   );
