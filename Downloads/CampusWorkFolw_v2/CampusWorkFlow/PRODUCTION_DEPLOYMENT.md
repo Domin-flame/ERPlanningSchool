@@ -17,9 +17,12 @@ payment data.
   seed or the academic catalogue seed.
 - Set `ALLOWED_ORIGINS` to the exact HTTPS origin(s) serving the frontend.
 - Compose publishes only the frontend and gateway, bound to `127.0.0.1`.
-  Terminate TLS at a maintained reverse proxy/load balancer and expose only
-  that HTTPS endpoint. Do not bind service, database, Redis, or RabbitMQ ports
-  to a public interface.
+  Terminate TLS at a maintained reverse proxy on the same host (or a securely
+  connected load balancer) and expose only that HTTPS endpoint. Do not bind
+  service, database, Redis, or RabbitMQ ports to a public interface.
+- Generate URL-safe random credentials (for example, `openssl rand -hex 32`)
+  so passwords interpolated into database and broker connection URLs do not
+  need ambiguous URI escaping. Use separate values for each credential.
 - Use a production `.env` only as a local fallback; prefer the deployment
   platform's secret injection. Never commit it.
 
