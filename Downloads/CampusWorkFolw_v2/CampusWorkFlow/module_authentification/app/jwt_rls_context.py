@@ -23,6 +23,11 @@ from sqlalchemy import text
 
 # Configuration JWT (identique à identity-service)
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-change-in-production")
+if os.getenv("APP_ENV", "development").lower() == "production" and (
+    len(JWT_SECRET) < 32
+    or any(marker in JWT_SECRET.lower() for marker in ("dev-secret", "change-me", "replace", "example", "sample", "local-dev"))
+):
+    raise RuntimeError("Production requires a JWT_SECRET with at least 32 characters.")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 

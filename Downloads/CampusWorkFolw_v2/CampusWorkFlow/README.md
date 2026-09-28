@@ -68,6 +68,14 @@ RabbitMQ, ce qui garantit l'indépendance déjà annoncée dans le projet.
 
 ## 2. Démarrage
 
+> **Production :** ce fichier `.env.example` contient des identifiants de
+> développement et ne doit jamais servir au déploiement. Le Compose normal
+> refuse les secrets requis manquants, ne publie que le frontend et le gateway
+> sur loopback, et désactive les données de démonstration par défaut.
+> Cela ne remplace pas les migrations, TLS, sauvegardes ou la supervision.
+> Lire [`PRODUCTION_DEPLOYMENT.md`](PRODUCTION_DEPLOYMENT.md) avant toute mise
+> en production.
+
 ### Prérequis
 - Docker + Docker Compose v2
 
@@ -97,11 +105,12 @@ docker compose down -v         # arrêt + suppression des volumes (repart de zé
 
 ## 3. Comptes de test
 
-**Aucune donnée fictive n'est pré-remplie**, à l'exception des **6 comptes
-de démonstration ci-dessous** (un par rôle du système — le projet définit
-6 rôles, pas 4, chacun correspondant à un module métier). Tout le reste
-(étudiants, cours, factures, employés, messages...) se construit au fur et
-à mesure de l'utilisation réelle de l'application.
+Les comptes de démonstration ne sont créés que si `DB_AUTO_SEED=true` est
+explicitement activé dans `.env`. Ils sont réservés au développement et
+utilisent tous le mot de passe faible `password123`; ne les activez jamais en
+production. Les exemples SQL présents dans les anciennes bases Finance/RH ne
+sont plus montés par Compose. Pour le catalogue académique, un petit jeu de
+données de test peut être activé explicitement avec `DB_AUTO_SEED=true`.
 
 | Email | Mot de passe | Rôle | Accès |
 |---|---|---|---|
@@ -112,10 +121,9 @@ de démonstration ci-dessous** (un par rôle du système — le projet définit
 | `finance@campus.edu` | `password123` | Responsable financier | Factures, paiements, campagnes |
 | `marketing@campus.edu` | `password123` | Responsable marketing | Campagnes, leads |
 
-Ces comptes sont créés automatiquement au premier démarrage par
-`module_authentification/docker-entrypoint.sh` (activé via
-`DB_AUTO_SEED=true` dans `.env`). Les mots de passe sont hachés en bcrypt
-en base, jamais stockés en clair.
+Les mots de passe de ces comptes de développement sont hachés en bcrypt en
+base, mais cela ne rend pas ces identifiants appropriés pour un environnement
+de production.
 
 ---
 

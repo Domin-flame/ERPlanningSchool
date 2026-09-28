@@ -12,6 +12,17 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+if (
+  process.env.APP_ENV === 'production' &&
+  (
+    JWT_SECRET.length < 32 ||
+    ['dev-secret', 'change-me', 'replace', 'example', 'sample', 'local-dev'].some((marker) =>
+      JWT_SECRET.toLowerCase().includes(marker)
+    )
+  )
+) {
+  throw new Error('Production requires a JWT_SECRET with at least 32 characters.');
+}
 
 // ── Services ─────────────────────────────────────────────────
 const SERVICES = {
@@ -25,8 +36,15 @@ const SERVICES = {
 
 // ── Middlewares ────────────────────────────────────────────────
 app.use(helmet());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin(origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(morgan('combined'));
