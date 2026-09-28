@@ -79,6 +79,19 @@ RabbitMQ, ce qui garantit l'indépendance déjà annoncée dans le projet.
 ### Prérequis
 - Docker + Docker Compose v2
 
+### Build Windows sans Docker
+
+Pour installer les dépendances et compiler les applications sans lancer Docker,
+exécuter `build.bat` depuis l'Explorateur ou un terminal Windows. Node.js avec
+npm et Python 3 sont requis; les dépendances Python sont isolées dans un
+`.venv` par service. Le script produit le frontend dans `frontend/dist` et
+vérifie les sources Python et la passerelle.
+
+Ce build ne démarre pas les services. Pour exécuter l'application sans Docker,
+PostgreSQL, Redis et RabbitMQ doivent être installés et configurés localement,
+et les variables d'environnement de chaque service doivent pointer vers ces
+instances.
+
 ### Lancer tout le système
 
 ```bash
