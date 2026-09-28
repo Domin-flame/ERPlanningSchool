@@ -25,6 +25,12 @@ export default function Courses() {
   const [showForm, setShowForm] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
+  useEffect(() => {
+    if (!toastMessage) return undefined;
+    const timer = window.setTimeout(() => setToastMessage(""), 3000);
+    return () => window.clearTimeout(timer);
+  }, [toastMessage]);
+
   const loadCatalog = useCallback(async () => {
     setLoading(true);
     setFetchError("");
@@ -119,18 +125,18 @@ export default function Courses() {
 
       <div className="panel" style={{ padding: 16, marginBottom: 20 }}>
         <div className="filterbar">
-          <label className="sr-only" htmlFor="course-search">Rechercher dans les cours</label>
           <input
             id="course-search"
             className="field"
+            aria-label="Rechercher dans les cours"
             placeholder="Rechercher par intitulé ou code…"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <label className="sr-only" htmlFor="course-module-filter">Filtrer par module</label>
           <select
             id="course-module-filter"
             className="field"
+            aria-label="Filtrer par module"
             value={moduleFilter}
             onChange={(event) => setModuleFilter(event.target.value)}
           >

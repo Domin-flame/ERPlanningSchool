@@ -57,8 +57,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-campus_pass}
     volumes:
       - academic-data:/var/lib/postgresql/data
-      - ./postgres/academic_schema_tables.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./postgres/donnees_test_academic.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-campus_user} -d academic_db"]
       interval: 10s
@@ -172,6 +170,7 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-campus_user}:${DB_PASSWORD:-campus_pass}@academic-db:5432/academic_db
       DATABASE_SCHEMA: academic
       DB_AUTO_INIT: "false"
+      DB_AUTO_SEED: ${DB_AUTO_SEED:-true}
       JWT_SECRET: ${JWT_SECRET}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}

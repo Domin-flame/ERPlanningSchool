@@ -20,15 +20,6 @@ const ROLES = [
   { value: "academic", label: "Direction / Académique" },
 ];
 
-const DEPARTMENTS = [
-  "Computer Science",
-  "Biology",
-  "Mathematics",
-  "Marketing & Communication",
-  "Finance & Administration",
-  "Human Resources",
-];
-
 const formatMoney = (value) =>
   `${Number(value || 0).toLocaleString("fr-FR")} XAF`;
 
@@ -72,7 +63,7 @@ export default function HR() {
   const [lastName, setLastName] = useState("");
   const [empEmail, setEmpEmail] = useState("");
   const [empPhone, setEmpPhone] = useState("");
-  const [department, setDepartment] = useState(DEPARTMENTS[0]);
+  const [department, setDepartment] = useState("");
   const [position, setPosition] = useState("");
   const [hireDate, setHireDate] = useState(new Date().toISOString().split("T")[0]);
   const [baseSalary, setBaseSalary] = useState("");
@@ -163,7 +154,7 @@ export default function HR() {
     setLastName("");
     setEmpEmail("");
     setEmpPhone("");
-    setDepartment(DEPARTMENTS[0]);
+    setDepartment("");
     setPosition("");
     setHireDate(new Date().toISOString().split("T")[0]);
     setBaseSalary("");
@@ -174,7 +165,7 @@ export default function HR() {
     event.preventDefault();
     setFormError("");
 
-    if (!firstName || !lastName || !empEmail || !matricule || !position || !baseSalary) {
+    if (!firstName || !lastName || !empEmail || !matricule || !authUserId.trim() || !department.trim() || !position || !baseSalary) {
       setFormError("Tous les champs obligatoires (*) doivent être remplis.");
       return;
     }
@@ -188,7 +179,7 @@ export default function HR() {
     setSubmitting(true);
     try {
       await addEmployee({
-        auth_user_id: authUserId || empEmail,
+        auth_user_id: authUserId.trim(),
         matricule,
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -227,7 +218,7 @@ export default function HR() {
       last_name: employee.last_name || "",
       email: employee.email || "",
       phone: employee.phone || "",
-      department: employee.department || DEPARTMENTS[0],
+      department: employee.department || "",
       position: employee.position || "",
       hire_date: employee.hire_date || "",
       base_salary: employee.base_salary ?? "",
@@ -570,17 +561,23 @@ export default function HR() {
           <label>Matricule *<input className="field" value={matricule} onChange={(e) => setMatricule(e.target.value)} placeholder="EMP-001" required /></label>
           <label>Email professionnel *<input type="email" className="field" value={empEmail} onChange={(e) => setEmpEmail(e.target.value)} required /></label>
           <label>Téléphone<input className="field" value={empPhone} onChange={(e) => setEmpPhone(e.target.value)} /></label>
-          <label>Département *
-            <select className="field" value={department} onChange={(e) => setDepartment(e.target.value)}>
-              {DEPARTMENTS.map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </label>
+          <label>Département *<input className="field" value={department} onChange={(e) => setDepartment(e.target.value)} required /></label>
           <label>Intitulé du poste *<input className="field" value={position} onChange={(e) => setPosition(e.target.value)} required /></label>
           <label>Date d'embauche *<input type="date" className="field" value={hireDate} onChange={(e) => setHireDate(e.target.value)} required /></label>
           <label className="full">Salaire de base (XAF) *<input type="number" className="field" value={baseSalary} onChange={(e) => setBaseSalary(e.target.value)} min="0" step="1" required /></label>
-          <label className="full">ID Auth utilisateur (optionnel)
-            <input className="field" value={authUserId} onChange={(e) => setAuthUserId(e.target.value)} placeholder="ID du compte Auth si déjà créé" />
+          <label className="full">Compte utilisateur (ID Auth) *
+            <select className="field" value={authUserId} onChange={(e) => setAuthUserId(e.target.value)} required>
+              <option value="">Sélectionner un compte existant</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.full_name || account.email} — {account.email}
+                </option>
+              ))}
+            </select>
           </label>
+          {accounts.length === 0 && (
+            <p className="full muted">Aucun compte utilisateur n’est disponible pour le rattachement RH.</p>
+          )}
         </form>
       </Modal>
 
@@ -608,11 +605,7 @@ export default function HR() {
           <label>Nom *<input className="field" value={editForm.last_name || ""} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} /></label>
           <label>Email professionnel *<input type="email" className="field" value={editForm.email || ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></label>
           <label>Téléphone<input className="field" value={editForm.phone || ""} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></label>
-          <label>Département *
-            <select className="field" value={editForm.department || ""} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}>
-              {DEPARTMENTS.map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </label>
+          <label>Département *<input className="field" value={editForm.department || ""} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} required /></label>
           <label>Poste *<input className="field" value={editForm.position || ""} onChange={(e) => setEditForm({ ...editForm, position: e.target.value })} /></label>
           <label>Date d'embauche<input type="date" className="field" value={editForm.hire_date || ""} onChange={(e) => setEditForm({ ...editForm, hire_date: e.target.value })} /></label>
           <label>Salaire de base<input type="number" min="0" className="field" value={editForm.base_salary ?? ""} onChange={(e) => setEditForm({ ...editForm, base_salary: e.target.value })} /></label>
