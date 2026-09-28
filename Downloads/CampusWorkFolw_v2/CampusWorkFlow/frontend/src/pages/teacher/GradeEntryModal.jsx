@@ -1,4 +1,4 @@
-import Modal from "../../../components/Modal.jsx";
+import Modal from "../../components/Modal.jsx";
 
 export default function GradeEntryModal({
   open,

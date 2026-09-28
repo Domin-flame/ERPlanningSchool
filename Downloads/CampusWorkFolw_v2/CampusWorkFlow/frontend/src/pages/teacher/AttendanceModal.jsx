@@ -1,5 +1,5 @@
-import Modal from "../../../components/Modal.jsx";
-import { getInitials } from "../../../services/teacherService.js";
+import Modal from "../../components/Modal.jsx";
+import { getInitials } from "../../services/teacherService.js";
 
 export default function AttendanceModal({
   open,
