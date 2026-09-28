@@ -67,39 +67,39 @@ function MainRoutes() {
         <Route path="/" element={<HomeDashboard />} />
         <Route
           path="/professeur"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/professeur"]}><TeacherDashboard /></RoleRoute>}
+          element={roleRoute("/professeur", <TeacherDashboard />)}
         />
         <Route
           path="/student"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/student"]}><StudentDashboard /></RoleRoute>}
+          element={roleRoute("/student", <StudentDashboard />)}
         />
         <Route
           path="/student/transcript"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/student/transcript"]}><Transcript /></RoleRoute>}
+          element={roleRoute("/student/transcript", <Transcript />)}
         />
         <Route
           path="/marketing"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/marketing"]}><MarketingDashboard /></RoleRoute>}
+          element={roleRoute("/marketing", <MarketingDashboard />)}
         />
         <Route
           path="/finance"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/finance"]}><Finance /></RoleRoute>}
+          element={roleRoute("/finance", <Finance />)}
         />
-        <Route path="/hr" element={<RoleRoute allowedRoles={ROUTE_ACCESS["/hr"]}><HR /></RoleRoute>} />
+        <Route path="/hr" element={roleRoute("/hr", <HR />)} />
         <Route
           path="/students"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/students"]}><Students /></RoleRoute>}
+          element={roleRoute("/students", <Students />)}
         />
         <Route
           path="/courses"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/courses"]}><Courses /></RoleRoute>}
+          element={roleRoute("/courses", <Courses />)}
         />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<Notification />} />
         <Route
           path="/analytics"
-          element={<RoleRoute allowedRoles={ROUTE_ACCESS["/analytics"]}><Analytics /></RoleRoute>}
+          element={roleRoute("/analytics", <Analytics />)}
         />
         <Route path="/settings" element={<Settings />} />
       </Route>
@@ -109,8 +109,8 @@ function MainRoutes() {
   );
 }
 
-function RoleRoute({ allowedRoles, children }) {
-  return <ProtectedRoute allowedRoles={allowedRoles}>{children}</ProtectedRoute>;
+function roleRoute(path, page) {
+  return <ProtectedRoute allowedRoles={ROUTE_ACCESS[path]}>{page}</ProtectedRoute>;
 }
 
 export default function App() {
