@@ -648,6 +648,14 @@ textarea:focus {
   gap: 10px;
 }
 
+.page-heading-title h2 {
+  margin-bottom: 0;
+}
+
+.page-heading-title + p {
+  margin-top: 8px;
+}
+
 .page-head h2 {
   font-size: clamp(1.65rem, 2.5vw, 2.1rem);
   margin: 0 0 8px;

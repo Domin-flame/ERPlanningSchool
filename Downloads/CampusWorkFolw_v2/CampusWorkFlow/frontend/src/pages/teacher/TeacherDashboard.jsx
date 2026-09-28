@@ -391,22 +391,22 @@ export default function TeacherDashboard() {
         badgeClass="professeur"
         actions={
           <>
-          <button
-            className="btn"
-            onClick={openAttendanceModal}
-            disabled={offerings.length === 0}
-            title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
-          >
-            📋 Faire l'appel
-          </button>
-          <button
-            className="btn primary"
-            onClick={() => openGradeModal()}
-            disabled={offerings.length === 0}
-            title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
-          >
-            ✏️ Saisir des notes
-          </button>
+            <button
+              className="btn"
+              onClick={openAttendanceModal}
+              disabled={offerings.length === 0}
+              title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
+            >
+              📋 Faire l'appel
+            </button>
+            <button
+              className="btn primary"
+              onClick={() => openGradeModal()}
+              disabled={offerings.length === 0}
+              title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
+            >
+              ✏️ Saisir des notes
+            </button>
           </>
         }
       />

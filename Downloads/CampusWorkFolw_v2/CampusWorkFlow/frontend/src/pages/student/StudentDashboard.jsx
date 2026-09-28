@@ -1,10 +1,8 @@
-import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
 import StatCard from "../../components/StatCard.jsx";
 import Badge from "../../components/Badge.jsx";
-import Modal from "../../components/Modal.jsx";
-import Toast from "../../components/Toast.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
@@ -26,12 +24,7 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const { courses, invoices, studentOverview, loading } = useData();
 
-  const [modalEnroll, setModalEnroll] = useState(false);
-  const [toastShow, setToastShow] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-
   const studentName = user?.full_name || user?.name || "Étudiant";
-  const studentEmail = user?.email || "";
 
   // Données réelles depuis la base / API
   const studentData = studentOverview?.student;
@@ -63,24 +56,18 @@ export default function StudentDashboard() {
   return (
     <div className="page-animate">
       <Breadcrumbs items={[{ label: "Accueil" }, { label: "Portail Étudiant" }, { label: "Dashboard" }]} />
-      <div className="page-head">
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2>Bienvenue, {studentName} </h2>
-            <span className="role-pill student">{studentData?.level || "Étudiant"}</span>
-          </div>
-          <p className="muted">
-            {studentData?.faculty || "Faculté"} · {studentData?.program || "Filière à confirmer"} · {semester?.name || "Semestre en cours"}
-          </p>
-        </div>
-        
-        <div className="actions">
-          <Link className="btn" to="/student/transcript">📜 Relevé de notes</Link>
-          <button className="btn primary" onClick={() => setModalEnroll(true)}>
-            + S'inscrire à un cours
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title={`Bienvenue, ${studentName}`}
+        description={`${studentData?.faculty || "Faculté"} · ${studentData?.program || "Filière à confirmer"} · ${semester?.name || "Semestre en cours"}`}
+        badge={studentData?.level || "Étudiant"}
+        badgeClass="student"
+        actions={
+          <>
+            <Link className="btn" to="/student/transcript">📜 Relevé de notes</Link>
+            <Link className="btn primary" to="/courses">📚 Consulter les cours</Link>
+          </>
+        }
+      />
 
       <div className="grid stats">
         <StatCard
@@ -178,37 +165,6 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Modal Inscription Cours */}
-      <Modal
-        open={modalEnroll}
-        title="Inscription à un Nouveau Cours"
-        onClose={() => setModalEnroll(false)}
-        footer={
-          <>
-            <button className="btn" onClick={() => setModalEnroll(false)}>Annuler</button>
-            <button className="btn primary" onClick={() => {
-              setModalEnroll(false);
-              setToastMessage("Demande d'inscription en cours de validation.");
-              setToastShow(true);
-            }}>
-              Confirmer l'inscription
-            </button>
-          </>
-        }
-      >
-        <div className="form-grid">
-          <label className="full">
-            Sélectionner le club que vous voulez rejoindre *
-            <select className="field">
-              {courses.map((c) => (
-                <option key={c.code} value={c.code}>{c.code} — {c.title}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </Modal>
-
-      <Toast show={toastShow} message={toastMessage} sub="Portail Étudiant" />
     </div>
   );
 }
