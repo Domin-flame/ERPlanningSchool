@@ -631,27 +631,35 @@ textarea:focus {
 
 .page-head {
   display: flex;
-
   align-items: flex-start;
-
   justify-content: space-between;
-
   gap: 18px;
-
   margin-bottom: 22px;
 }
 
+.page-heading {
+  min-width: 0;
+}
+
+.page-heading-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .page-head h2 {
-  font-size: 34px;
-
+  font-size: clamp(1.65rem, 2.5vw, 2.1rem);
   margin: 0 0 8px;
-
   color: var(--ink);
+  line-height: 1.2;
 }
 
 .page-head p {
   margin: 0;
   color: var(--muted);
+  max-width: 68ch;
+  line-height: 1.55;
 }
 
 .actions {
@@ -683,12 +691,24 @@ textarea:focus {
   justify-content: center;
 
   gap: 8px;
-
   text-decoration: none;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
 .btn:hover {
   border-color: var(--strong-line);
+}
+
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.nav a:focus-visible {
+  outline: 3px solid rgba(249, 115, 22, 0.32);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn.primary {
@@ -1246,6 +1266,99 @@ tbody tr:hover {
 
 .form-grid .full {
   grid-column: 1 / -1;
+}
+
+.form-choice {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.form-choice legend {
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.form-choice label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.form-error {
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--danger);
+  background: var(--danger-bg);
+  font-size: 13px;
+}
+
+.form-error-spaced {
+  margin-bottom: 12px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.form-label-spaced {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.attendance-student {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.attendance-student-detail {
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+
+.finance-summary {
+  margin-top: 24px;
+}
+
+.finance-summary-panel {
+  min-height: 190px;
+  padding: 20px;
+}
+
+.data-placeholder {
+  margin: 16px 0 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  background: var(--panel-soft);
+  line-height: 1.5;
+}
+
+.employee-table-wrapper {
+  overflow-x: auto;
+}
+
+.employee-actions-heading {
+  text-align: right;
+}
+
+.employee-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 label {

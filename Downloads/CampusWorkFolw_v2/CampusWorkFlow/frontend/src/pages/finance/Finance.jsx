@@ -1,39 +1,17 @@
 import React, { useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
 import StatCard from "../../components/StatCard.jsx";
 import Badge from "../../components/Badge.jsx";
 import Modal from "../../components/Modal.jsx";
 import Toast from "../../components/Toast.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import api from "../../api/client.js";
 
-// remplacer ces données par des réelles issues de la base de données 
-const EXPENSES = [
-  { cat: "Masse Salariale Enseignants", amount: "128 400 XAF", pct: 68 },
-  { cat: "Infrastructure & Campus", amount: "28 900 XAF", pct: 16 },
-  { cat: "Équipements & Laboratoires", amount: "18 200 XAF", pct: 10 },
-  { cat: "Logiciels & Services Cloud", amount: "8 900 XAF", pct: 6 },
-];
-
-// dans facture totale mettre le nombre reelle de factures générés : lorsqu'on clique desssus voir la liste de toutes les factures crées classés par catégories ou par date, ce sont les factures qui ont déja aboutis 
-// dans la deuxième card c'est le nombre de facture qui ont été entré notamment par les étudiants et qui n'ont pas encore été approuvé 
-// voir ce que je peux mettre dans taux de recouvrement
-// dans la dernière card mettre la recette effectué par l'établissement : lorsqu'on clique dessus on peut voir les détails tels que les achats, le payement des salaires etc
-// répartition des dépenses nous permet d'allouer des montants pour telle ou telle chose par exemple alloué un budget pour le paiement de nouveau matériel ou bien pour payer des factures 
-// masse salariale nous permet de voir combien sont payés tels ou tels enseignants et combien ca coute au total on peut modifier les salaires, attribuer des dates de paiement 
-// détailler ce qu'on retrouve dans les autres également 
-// le graphique doit etre fonctionnelle et reflèter les données réelles : c'est un graphique globale de l'état financier de l'institution
-
-// en ce qui concerne bilan trésorerie il faut que je réfléchisse encore clairement sur toutes les focntionnalités de cette page et ce qu'il doit y avoir ici
-// il faut penser à implémenter le système de paiement : on paye en tranche ou la totalité une fois 
-// on peut décréter des dates limites de paiment qui seront partagés aux étudiants par message 
-// on peut aussi informer de retard de paiement par message par exemple aux employés 
 export default function Finance() {
-  const { user } = useAuth();
-  const { invoices, loading, errors } = useData();
+  const { invoices, loading, errors, refreshData } = useData();
 
   const [modalInv, setModalInv] = useState(false);
   const [toastShow, setToastShow] = useState(false);
@@ -84,6 +62,7 @@ export default function Finance() {
       setModalInv(false);
       setToastMsg(`Facture ${res.data.numero_facture || ""} émise avec succès.`);
       setToastShow(true);
+      await refreshData();
     } catch (err) {
       setFormError(err.response?.data?.detail || "Impossible de créer la facture.");
     } finally {
@@ -91,25 +70,6 @@ export default function Finance() {
     }
   };
 
-  const handleMarkPaid = async (inv) => {
-    const id = inv.id_invoice || inv.id;
-    const ref = inv.numero_facture || `FAC-${id}`;
-    try {
-      // Initier un paiement en espèces (ESPECES) pour marquer comme payée
-      await api.post("/finance/payments/momo/initiate", {
-        id_invoice: id,
-        montant: inv.montant_total || inv.amount,
-        methode: "MTN_MOMO",
-        numero_telephone: "000000000",
-      });
-      setToastMsg(`Facture ${ref} marquée comme payée.`);
-      setToastShow(true);
-    } catch (err) {
-      setToastMsg(err.response?.data?.detail || "Erreur lors du paiement.");
-      setToastShow(true);
-    }
-  };
-// en ce qui concerne le paiement par momo mettre qu'il est hors service mais on peut upload des recus et les valider au besoin 
   if (loading) {
     return (
       <div className="page-animate">
@@ -131,20 +91,17 @@ export default function Finance() {
     <div className="page-animate">
       <Breadcrumbs items={[{ label: "Accueil" }, { label: "Portail Finance" }, { label: "Dashboard" }]} />
 
-      <div className="page-head">
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2>Gestion Financière & Comptabilité</h2>
-            <span className="role-pill finance">Finance</span>
-          </div>
-          <p className="muted">Suivi des encaissements, factures de scolarité et budgets.</p>
-        </div>
-        <div className="actions">
+      <PageHeader
+        title="Gestion Financière & Comptabilité"
+        description="Suivi des encaissements, factures de scolarité et budgets."
+        badge="Finance"
+        badgeClass="finance"
+        actions={
           <button className="btn primary" onClick={() => { resetForm(); setModalInv(true); }}>
             + Émettre une Facture
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {errors.invoices && (
         <div style={{ background: "var(--danger-bg)", color: "var(--danger)", padding: "10px 16px", borderRadius: 8, marginBottom: 16 }}>
@@ -163,39 +120,22 @@ export default function Finance() {
         <StatCard label="Recettes" value="—" trend="Données en direct" mark="📊" />
       </div>
 
-      <div className="grid two-cols" style={{ marginTop: 24 }}>
-        <div className="panel card-interactive" style={{ padding: 20 }}>
+      <div className="grid two-cols finance-summary">
+        <div className="panel finance-summary-panel">
           <div className="panel-head">
-            <h3>Répartition des Dépenses</h3>
-            <span className="badge info">Budget</span>
+            <h3>Répartition des dépenses</h3>
+            <span className="badge info">Données financières</span>
           </div>
-          <div style={{ display: "grid", gap: 16, marginTop: 12 }}>
-            {EXPENSES.map((e) => (
-              <div key={e.cat}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                  <strong>{e.cat}</strong>
-                  <span className="muted">{e.amount}</span>
-                </div>
-                <div className="progress-bar-mini">
-                  <div className="fill" style={{ width: `${e.pct}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="data-placeholder">
+            Les données de dépenses ne sont pas encore disponibles dans le service financier.
+          </p>
         </div>
 
-        <div className="panel card-interactive" style={{ padding: 20 }}>
-          <h3>Flux de Trésorerie Mensuel</h3>
-          <div className="linechart" style={{ marginTop: 16 }}>
-            <svg viewBox="0 0 300 120" preserveAspectRatio="none" style={{ width: "100%", height: 140 }}>
-              <polyline points="0,95 50,70 100,80 150,45 200,60 250,25 300,35" fill="none" stroke="var(--brand)" strokeWidth="3" />
-              <polygon points="0,95 50,70 100,80 150,45 200,60 250,25 300,35 300,120 0,120" fill="rgba(249,115,22,0.15)" />
-            </svg>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-            <span className="muted">Jan 2026</span>
-            <span className="muted">Août 2026</span>
-          </div>
+        <div className="panel finance-summary-panel">
+          <h3>Flux de trésorerie mensuel</h3>
+          <p className="data-placeholder">
+            Le service financier ne fournit pas encore d'historique de trésorerie.
+          </p>
         </div>
       </div>
 
@@ -241,12 +181,10 @@ export default function Finance() {
                       } />
                     </td>
                     <td>
-                      {!isPaid ? (
-                        <button className="btn primary sm" onClick={() => handleMarkPaid(inv)}>
-                          Encaisser
-                        </button>
-                      ) : (
+                      {isPaid ? (
                         <span className="badge success">Encaissée</span>
+                      ) : (
+                        <span className="badge info">Paiement indisponible</span>
                       )}
                     </td>
                   </tr>
