@@ -68,10 +68,10 @@ RabbitMQ, ce qui garantit l'indépendance déjà annoncée dans le projet.
 
 ## 2. Démarrage
 
-> **Production :** ce fichier `.env.example` contient des identifiants de
-> développement et ne doit jamais servir au déploiement. Le Compose normal
-> refuse les secrets requis manquants, ne publie que le frontend et le gateway
-> sur loopback, et désactive les données de démonstration par défaut.
+> **Production :** les valeurs par défaut de Compose et `.env.example` sont
+> réservées au développement et ne doivent jamais servir au déploiement. Compose
+> ne publie que le frontend et le gateway sur loopback et désactive les données
+> de démonstration par défaut.
 > Cela ne remplace pas les migrations, TLS, sauvegardes ou la supervision.
 > Lire [`PRODUCTION_DEPLOYMENT.md`](PRODUCTION_DEPLOYMENT.md) avant toute mise
 > en production.
@@ -95,10 +95,14 @@ instances.
 ### Lancer tout le système
 
 ```bash
-cp .env.example .env   # si .env n'existe pas déjà (il est déjà fourni ici)
 docker compose up --build -d
 docker compose logs -f     # optionnel : suivre le démarrage
 ```
+
+Compose démarre avec ses valeurs locales par défaut ; aucun `.env` n'est requis.
+Pour personnaliser PostgreSQL, créer un fichier `.env` à la racine contenant
+uniquement `DB_USER` et `DB_PASSWORD` : le même compte est créé sur chacune des
+bases isolées. Les autres variables locales ont aussi des valeurs par défaut.
 
 Le démarrage prend 30 à 90 secondes (healthchecks PostgreSQL/RabbitMQ
 avant que chaque service ne parte). Une fois prêt :
@@ -106,6 +110,11 @@ avant que chaque service ne parte). Une fois prêt :
 - **Frontend** : http://localhost:5173
 - **Gateway / API** : http://localhost:3000/api
 - **RabbitMQ management UI** : http://localhost:15672 (identifiants dans `.env`)
+- **Assistant Campus** : accessible après connexion depuis le menu de navigation
+
+L’assistant guide les utilisateurs dans les pages de l’ERP à partir de réponses
+locales prédéfinies. Il n’a pas besoin de clé d’IA externe et ne consulte ni ne
+modifie les données personnelles.
 
 ### Arrêter / réinitialiser
 

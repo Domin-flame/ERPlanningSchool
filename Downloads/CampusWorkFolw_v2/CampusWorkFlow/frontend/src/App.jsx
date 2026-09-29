@@ -23,6 +23,7 @@ import Students from "./pages/academic/Students.jsx";
 import Courses from "./pages/general/Courses.jsx";
 import Calendar from "./pages/general/Calendar.jsx";
 import Messages from "./pages/message/Messages.jsx";
+import Chatbot from "./pages/general/Chatbot.jsx";
 import Notification from "./pages/notification/Notification.jsx";
 import Analytics from "./pages/general/Analytics.jsx";
 import Settings from "./pages/auth/Settings.jsx";
@@ -101,6 +102,7 @@ function MainRoutes() {
         />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/chatbot" element={roleRoute("/chatbot", <Chatbot />)} />
         <Route path="/notifications" element={<Notification />} />
         <Route
           path="/analytics"

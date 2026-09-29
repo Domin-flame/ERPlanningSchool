@@ -5,9 +5,14 @@ default Compose deployment safer, but an operator must complete the controls
 below before exposing the application or handling real student, employee, or
 payment data.
 
-## Fail-closed Compose defaults
+## Production configuration
 
-- Set `APP_ENV=production`.
+- Compose defaults target local development, not production. Set
+  `APP_ENV=production` explicitly before deployment.
+- Override all local fallback credentials (`DB_USER`, `DB_PASSWORD`,
+  `REDIS_PASSWORD`, `RABBITMQ_USER`, `RABBITMQ_PASS`, and `JWT_SECRET`) with
+  unique values from a protected deployment secret store. Every PostgreSQL
+  database uses the shared `DB_USER` and `DB_PASSWORD` settings.
 - Supply non-empty `DB_USER`, `DB_PASSWORD`, `REDIS_PASSWORD`,
   `RABBITMQ_USER`, `RABBITMQ_PASS`, and `JWT_SECRET` through a protected
   deployment secret store. Use randomly generated values; the JWT secret must

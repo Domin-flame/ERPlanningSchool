@@ -6,6 +6,7 @@ import {
   Folder,
   GraduationCap,
   LayoutDashboard,
+  Bot,
   MessageSquare,
   PenSquare,
   Presentation,
@@ -48,6 +49,7 @@ export const ROUTE_ACCESS = {
   "/students": ["academic", "professeur", "rh", "finance"],
   "/courses": ["academic", "professeur", "student", "rh"],
   "/analytics": ["academic", "rh", "finance", "marketing"],
+  "/chatbot": Object.keys(ROLE_HOME),
 };
 
 const ROLE_NAVIGATION = {
@@ -67,6 +69,7 @@ const ROLE_NAVIGATION = {
       { to: "/messages", label: "Messagerie", icon: MessageSquare },
       { to: "/analytics", label: "Rapports & Analytics", icon: BarChart3 },
       { to: "/settings", label: "Paramètres ERP", icon: Settings },
+      { to: "/chatbot", label: "Assistant Campus", icon: Bot },
     ],
   },
   professeur: {
@@ -77,6 +80,7 @@ const ROLE_NAVIGATION = {
       { to: "/calendar", label: "Mon Emploi du temps", icon: CalendarDays },
       { to: "/messages", label: "Messagerie & Avis", icon: MessageSquare },
       { to: "/settings", label: "Mon Profil", icon: Settings },
+      { to: "/chatbot", label: "Assistant Campus", icon: Bot },
     ],
   },
   student: {
@@ -87,6 +91,7 @@ const ROLE_NAVIGATION = {
       { to: "/calendar", label: "Mon Emploi du Temps", icon: CalendarDays },
       { to: "/messages", label: "Contacter Enseignant", icon: MessageSquare },
       { to: "/settings", label: "Mon Profil", icon: Settings },
+      { to: "/chatbot", label: "Assistant Campus", icon: Bot },
     ],
   },
   rh: {
@@ -97,6 +102,7 @@ const ROLE_NAVIGATION = {
       { to: "/analytics", label: "Rapports RH", icon: BarChart3 },
       { to: "/messages", label: "Messagerie Interne", icon: MessageSquare },
       { to: "/settings", label: "Paramètres", icon: Settings },
+      { to: "/chatbot", label: "Assistant Campus", icon: Bot },
     ],
   },
   finance: {
@@ -107,6 +113,7 @@ const ROLE_NAVIGATION = {
       { to: "/analytics", label: "Bilan de trésorerie", icon: BarChart3 },
       { to: "/messages", label: "Messagerie", icon: MessageSquare },
       { to: "/settings", label: "Paramètres", icon: Settings },
+      { to: "/chatbot", label: "Assistant Campus", icon: Bot },
     ],
   },
   marketing: {
@@ -116,6 +123,7 @@ const ROLE_NAVIGATION = {
       { to: "/analytics", label: "Analytics Conversions", icon: BarChart3 },
       { to: "/messages", label: "Messagerie", icon: MessageSquare },
       { to: "/settings", label: "Paramètres", icon: Settings },
+      { to: "/chatbot", label: "Assistant Campus", icon: Bot },
     ],
   },
 };
