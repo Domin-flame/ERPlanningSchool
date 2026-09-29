@@ -301,11 +301,12 @@ app.post('/api/chatbot/message', verifyToken, chatbotLimiter, async (req, res) =
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     let upstream;
+    let data;
     try {
       upstream = await fetch(parsedUrl, {
         method: 'POST',
         headers: {
-          Authorization: `******
+          Authorization: ['Bearer', apiKey].join(' '),
           'Content-Type': 'application/json',
           'HTTP-Referer': process.env.CHATBOT_SITE_URL || 'http://localhost:5173',
           'X-Title': 'CampusWorkflow',
@@ -325,16 +326,15 @@ app.post('/api/chatbot/message', verifyToken, chatbotLimiter, async (req, res) =
         }),
         signal: controller.signal,
       });
+      if (!upstream.ok) {
+        console.error(`[Gateway] chatbot provider returned HTTP ${upstream.status}`);
+        return res.status(502).json({ detail: 'Le fournisseur du chatbot est indisponible. Vérifiez la clé, le modèle et les crédits de votre compte.' });
+      }
+      data = await upstream.json();
     } finally {
       clearTimeout(timeout);
     }
 
-    if (!upstream.ok) {
-      console.error(`[Gateway] chatbot provider returned HTTP ${upstream.status}`);
-      return res.status(502).json({ detail: 'Le fournisseur du chatbot est indisponible. Vérifiez la clé, le modèle et les crédits de votre compte.' });
-    }
-
-    const data = await upstream.json();
     const reply = data.choices?.[0]?.message?.content;
     if (typeof reply !== 'string' || !reply.trim()) {
       console.error('[Gateway] chatbot provider returned an invalid response');
