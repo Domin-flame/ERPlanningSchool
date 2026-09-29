@@ -6,7 +6,7 @@ import PageHeader from "../../components/PageHeader.jsx";
 
 const INITIAL_MESSAGE = {
   role: "assistant",
-  content: "Bonjour ! Je suis l’assistant CampusWorkflow. Je peux vous guider dans les fonctionnalités de l’application. Que souhaitez-vous trouver ?",
+  content: "Bonjour ! Je suis l’assistant IA de CampusWorkflow. Posez-moi une question sur l’application ou la vie universitaire.",
 };
 
 const SUGGESTIONS = [
@@ -34,7 +34,11 @@ export default function Chatbot() {
     setMessages((current) => [...current, { role: "user", content: message }]);
     setSending(true);
     try {
-      const response = await api.post("/chatbot/message", { message });
+      const history = messages
+        .filter((item) => item !== INITIAL_MESSAGE)
+        .slice(-12)
+        .map(({ role, content }) => ({ role, content }));
+      const response = await api.post("/chatbot/message", { message, history });
       setMessages((current) => [...current, { role: "assistant", content: response.data.reply }]);
     } catch (requestError) {
       setError(requestError.response?.data?.detail || "L’assistant est temporairement indisponible. Réessayez.");
@@ -69,7 +73,7 @@ export default function Chatbot() {
 
       <section className="panel campus-chatbot" aria-label="Conversation avec l’assistant">
         <div className="campus-chatbot-notice">
-          L’assistant fournit des indications générales. Il ne consulte pas vos données personnelles et n’effectue aucune action dans l’application.
+          Vos messages sont transmis au fournisseur d’IA configuré par votre établissement. N’envoyez pas de mot de passe ni de données personnelles ou confidentielles.
         </div>
         <div className="campus-chatbot-messages" aria-live="polite">
           {messages.map((message, index) => (

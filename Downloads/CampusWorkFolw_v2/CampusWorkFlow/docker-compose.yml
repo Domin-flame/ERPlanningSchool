@@ -191,6 +191,8 @@ services:
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_local_dev}@rabbitmq:5672/
       NOTIFICATION_SERVICE_URL: http://notification-service:8006
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      FINANCE_PRICE_PER_CREDIT: ${FINANCE_PRICE_PER_CREDIT:-15000}
+      FINANCE_INVOICE_DUE_DAYS: ${FINANCE_INVOICE_DUE_DAYS:-30}
     depends_on:
       finance-db:
         condition: service_healthy
@@ -294,7 +296,12 @@ services:
       HR_SERVICE_URL: ${HR_SERVICE_URL:-http://hr-service:8004}
       MESSAGE_SERVICE_URL: ${MESSAGE_SERVICE_URL:-http://message-service:8005}
       NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service:8006}
+      SWAGGER_SERVER_URL: ${SWAGGER_SERVER_URL:-http://localhost:3000}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      CHATBOT_API_KEY: ${CHATBOT_API_KEY:-}
+      CHATBOT_API_URL: ${CHATBOT_API_URL:-https://openrouter.ai/api/v1/chat/completions}
+      CHATBOT_MODEL: ${CHATBOT_MODEL:-openai/gpt-4o-mini}
+      CHATBOT_SITE_URL: ${CHATBOT_SITE_URL:-http://localhost:5173}
     depends_on:
       auth-service:
         condition: service_healthy

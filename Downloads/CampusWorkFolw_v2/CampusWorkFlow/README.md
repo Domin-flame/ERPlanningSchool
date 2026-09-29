@@ -94,15 +94,27 @@ instances.
 
 ### Lancer tout le système
 
+Copiez le modèle et ajoutez votre clé API pour activer le chatbot :
+
+```bash
+cp .env.example .env
+```
+
+Sous Windows, utilisez `copy .env.example .env`, puis éditez `.env`.
+Renseignez `CHATBOT_API_KEY` avec la clé de votre fournisseur compatible avec
+l’API OpenAI Chat Completions. Vous pouvez modifier `CHATBOT_API_URL` et
+`CHATBOT_MODEL` si votre fournisseur utilise une autre URL ou un autre modèle.
+Ne communiquez jamais votre clé dans un message ou ne la placez pas dans le
+frontend.
+
 ```bash
 docker compose up --build -d
 docker compose logs -f     # optionnel : suivre le démarrage
 ```
 
-Compose démarre avec ses valeurs locales par défaut ; aucun `.env` n'est requis.
-Pour personnaliser PostgreSQL, créer un fichier `.env` à la racine contenant
-uniquement `DB_USER` et `DB_PASSWORD` : le même compte est créé sur chacune des
-bases isolées. Les autres variables locales ont aussi des valeurs par défaut.
+Dans `.env`, `DB_USER` et `DB_PASSWORD` configurent le même compte sur chacune
+des six bases PostgreSQL isolées. Les autres paramètres ont des valeurs de
+développement par défaut ; consultez `.env.example` pour leur liste.
 PostgreSQL ne réinitialise pas les identifiants d'un volume déjà initialisé :
 si vous réutilisez des volumes existants, gardez les identifiants qui ont servi
 à les créer. Ne supprimez pas les volumes pour corriger un problème de mot de
@@ -116,9 +128,11 @@ avant que chaque service ne parte). Une fois prêt :
 - **RabbitMQ management UI** : http://localhost:15672 (identifiants dans `.env`)
 - **Assistant Campus** : accessible après connexion depuis le menu de navigation
 
-L’assistant guide les utilisateurs dans les pages de l’ERP à partir de réponses
-locales prédéfinies. Il n’a pas besoin de clé d’IA externe et ne consulte ni ne
-modifie les données personnelles.
+L’assistant utilise le fournisseur d’IA compatible avec l’API OpenAI Chat
+Completions configuré dans `.env`. La clé reste côté serveur. Les messages sont
+envoyés au fournisseur externe : n’y saisissez aucun mot de passe ni donnée
+personnelle ou confidentielle. Après toute modification de `.env`, recréez le
+gateway avec `docker compose up -d --force-recreate gateway`.
 
 ### Arrêter / réinitialiser
 

@@ -15,6 +15,11 @@ payment data.
   database uses the same `DB_USER` and `DB_PASSWORD`. Use randomly generated
   values; the JWT secret must be at least 32 characters. Production startup
   rejects known placeholders and short JWT secrets.
+- Store `CHATBOT_API_KEY` in the same secret manager, configure the provider's
+  HTTPS Chat Completions endpoint and model through `CHATBOT_API_URL` and
+  `CHATBOT_MODEL`, and review the provider's data-retention/privacy terms.
+  Chatbot prompts are sent to that external provider; never include passwords,
+  personal records, or confidential data.
 - Set `DB_AUTO_SEED=false`. Do not enable the authentication demo-account
   seed or the academic catalogue seed.
 - Set `ALLOWED_ORIGINS` to the exact HTTPS origin(s) serving the frontend.
