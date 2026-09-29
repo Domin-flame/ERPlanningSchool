@@ -5,7 +5,7 @@ function _toWsUrl(baseUrl, path) {
     const isSecure = url.protocol === "https:";
     const wsProtocol = isSecure ? "wss:" : "ws:";
     return `${wsProtocol}//${url.host}${path.startsWith("/") ? path : `/${path}`}`;
-  } catch (e) {
+  } catch {
     // fallback to same host
     const loc = window.location;
     const proto = loc.protocol === "https:" ? "wss:" : "ws:";
@@ -27,7 +27,7 @@ export function connectWithJwt({ baseApiUrl = "/api", path = "/ws/notifications"
     try {
       const data = JSON.parse(ev.data);
       if (onMessage) onMessage(data, ev, ws);
-    } catch (e) {
+    } catch {
       if (onMessage) onMessage(ev.data, ev, ws);
     }
   };

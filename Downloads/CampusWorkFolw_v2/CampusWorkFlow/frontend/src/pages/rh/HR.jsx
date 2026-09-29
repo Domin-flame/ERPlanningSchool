@@ -1,11 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
 import StatCard from "../../components/StatCard.jsx";
-import Badge from "../../components/Badge.jsx";
 import Modal from "../../components/Modal.jsx";
 import Toast from "../../components/Toast.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
+import EmployeeTable from "./EmployeeTable.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import api from "../../api/client.js";
@@ -16,15 +17,6 @@ const ROLES = [
   { value: "finance", label: "Finance" },
   { value: "marketing", label: "Marketing" },
   { value: "academic", label: "Direction / Académique" },
-];
-
-const DEPARTMENTS = [
-  "Computer Science",
-  "Biology",
-  "Mathematics",
-  "Marketing & Communication",
-  "Finance & Administration",
-  "Human Resources",
 ];
 
 const formatMoney = (value) =>
@@ -70,7 +62,7 @@ export default function HR() {
   const [lastName, setLastName] = useState("");
   const [empEmail, setEmpEmail] = useState("");
   const [empPhone, setEmpPhone] = useState("");
-  const [department, setDepartment] = useState(DEPARTMENTS[0]);
+  const [department, setDepartment] = useState("");
   const [position, setPosition] = useState("");
   const [hireDate, setHireDate] = useState(new Date().toISOString().split("T")[0]);
   const [baseSalary, setBaseSalary] = useState("");
@@ -113,7 +105,7 @@ export default function HR() {
     window.setTimeout(() => setToastShow(false), 3500);
   };
 
-  const loadHRDashboard = async () => {
+  const loadHRDashboard = useCallback(async () => {
     if (!user) return;
 
     setLeaveLoading(true);
@@ -148,11 +140,11 @@ export default function HR() {
 
     setLeaveLoading(false);
     setUsersLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
-    if (user) loadHRDashboard();
-  }, [user]);
+    loadHRDashboard();
+  }, [loadHRDashboard]);
 
   const resetForm = () => {
     setAuthUserId("");
@@ -161,7 +153,7 @@ export default function HR() {
     setLastName("");
     setEmpEmail("");
     setEmpPhone("");
-    setDepartment(DEPARTMENTS[0]);
+    setDepartment("");
     setPosition("");
     setHireDate(new Date().toISOString().split("T")[0]);
     setBaseSalary("");
@@ -172,7 +164,7 @@ export default function HR() {
     event.preventDefault();
     setFormError("");
 
-    if (!firstName || !lastName || !empEmail || !matricule || !position || !baseSalary) {
+    if (!firstName || !lastName || !empEmail || !matricule || !authUserId.trim() || !department.trim() || !position || !baseSalary) {
       setFormError("Tous les champs obligatoires (*) doivent être remplis.");
       return;
     }
@@ -186,7 +178,7 @@ export default function HR() {
     setSubmitting(true);
     try {
       await addEmployee({
-        auth_user_id: authUserId || empEmail,
+        auth_user_id: authUserId.trim(),
         matricule,
         first_name: firstName.trim(),
         last_name: lastName.trim(),
@@ -225,7 +217,7 @@ export default function HR() {
       last_name: employee.last_name || "",
       email: employee.email || "",
       phone: employee.phone || "",
-      department: employee.department || DEPARTMENTS[0],
+      department: employee.department || "",
       position: employee.position || "",
       hire_date: employee.hire_date || "",
       base_salary: employee.base_salary ?? "",
@@ -363,23 +355,17 @@ export default function HR() {
     <div className="page-animate">
       <Breadcrumbs items={[{ label: "Accueil" }, { label: "Portail RH" }, { label: "Dashboard" }]} />
 
-      <div className="page-head">
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2>Ressources Humaines & Paie</h2>
-            <span className="role-pill rh">Portail RH</span>
-          </div>
-          <p className="muted">
-            Pilotage du personnel, validation des comptes, mobilité interne, congés et masse salariale.
-          </p>
-        </div>
-
-        <div className="actions">
+      <PageHeader
+        title="Ressources Humaines & Paie"
+        description="Pilotage du personnel, validation des comptes, mobilité interne, congés et masse salariale."
+        badge="Portail RH"
+        badgeClass="rh"
+        actions={
           <button className="btn primary" onClick={() => { resetForm(); setModalEmp(true); }}>
             + Ajouter un employé
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {errors.employees && (
         <div style={{
@@ -418,47 +404,12 @@ export default function HR() {
               action={<button className="btn primary" onClick={() => setModalEmp(true)}>+ Ajouter un employé</button>}
             />
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Matricule</th>
-                    <th>Employé</th>
-                    <th>Département</th>
-                    <th>Poste</th>
-                    <th>Salaire</th>
-                    <th>Statut</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((employee) => (
-                    <tr key={employee.id || employee.matricule} className="row-hover">
-                      <td><code className="code-tag">{employee.matricule}</code></td>
-                      <td>
-                        <strong>{employee.first_name} {employee.last_name}</strong>
-                        <br />
-                        <small className="muted">{employee.email}</small>
-                      </td>
-                      <td>{employee.department}</td>
-                      <td>{employee.position}</td>
-                      <td><strong>{formatMoney(employee.base_salary)}</strong></td>
-                      <td><Badge status={employee.is_active ? "Active" : "Inactive"} /></td>
-                      <td>
-                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                          <button className="btn ghost sm" onClick={() => openEditEmployee(employee)}>Modifier</button>
-                          {employee.is_active && (
-                            <button className="btn ghost sm" onClick={() => handleDeactivateEmployee(employee)}>
-                              Désactiver
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <EmployeeTable
+              employees={employees}
+              formatMoney={formatMoney}
+              onEdit={openEditEmployee}
+              onDeactivate={handleDeactivateEmployee}
+            />
           )}
         </div>
 
@@ -609,17 +560,23 @@ export default function HR() {
           <label>Matricule *<input className="field" value={matricule} onChange={(e) => setMatricule(e.target.value)} placeholder="EMP-001" required /></label>
           <label>Email professionnel *<input type="email" className="field" value={empEmail} onChange={(e) => setEmpEmail(e.target.value)} required /></label>
           <label>Téléphone<input className="field" value={empPhone} onChange={(e) => setEmpPhone(e.target.value)} /></label>
-          <label>Département *
-            <select className="field" value={department} onChange={(e) => setDepartment(e.target.value)}>
-              {DEPARTMENTS.map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </label>
+          <label>Département *<input className="field" value={department} onChange={(e) => setDepartment(e.target.value)} required /></label>
           <label>Intitulé du poste *<input className="field" value={position} onChange={(e) => setPosition(e.target.value)} required /></label>
           <label>Date d'embauche *<input type="date" className="field" value={hireDate} onChange={(e) => setHireDate(e.target.value)} required /></label>
           <label className="full">Salaire de base (XAF) *<input type="number" className="field" value={baseSalary} onChange={(e) => setBaseSalary(e.target.value)} min="0" step="1" required /></label>
-          <label className="full">ID Auth utilisateur (optionnel)
-            <input className="field" value={authUserId} onChange={(e) => setAuthUserId(e.target.value)} placeholder="ID du compte Auth si déjà créé" />
+          <label className="full">Compte utilisateur (ID Auth) *
+            <select className="field" value={authUserId} onChange={(e) => setAuthUserId(e.target.value)} required>
+              <option value="">Sélectionner un compte existant</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.full_name || account.email} — {account.email}
+                </option>
+              ))}
+            </select>
           </label>
+          {accounts.length === 0 && (
+            <p className="full muted">Aucun compte utilisateur n’est disponible pour le rattachement RH.</p>
+          )}
         </form>
       </Modal>
 
@@ -647,11 +604,7 @@ export default function HR() {
           <label>Nom *<input className="field" value={editForm.last_name || ""} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} /></label>
           <label>Email professionnel *<input type="email" className="field" value={editForm.email || ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></label>
           <label>Téléphone<input className="field" value={editForm.phone || ""} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></label>
-          <label>Département *
-            <select className="field" value={editForm.department || ""} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}>
-              {DEPARTMENTS.map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </label>
+          <label>Département *<input className="field" value={editForm.department || ""} onChange={(e) => setEditForm({ ...editForm, department: e.target.value })} required /></label>
           <label>Poste *<input className="field" value={editForm.position || ""} onChange={(e) => setEditForm({ ...editForm, position: e.target.value })} /></label>
           <label>Date d'embauche<input type="date" className="field" value={editForm.hire_date || ""} onChange={(e) => setEditForm({ ...editForm, hire_date: e.target.value })} /></label>
           <label>Salaire de base<input type="number" min="0" className="field" value={editForm.base_salary ?? ""} onChange={(e) => setEditForm({ ...editForm, base_salary: e.target.value })} /></label>

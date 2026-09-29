@@ -4,8 +4,9 @@ import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { DataProvider } from "./context/DataContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Layout from "./components/Layout.jsx";
+import { ROUTE_ACCESS } from "./app/access.js";
 
-import Splash from "./pages/auth/Splash.jsx";
+import EntryRedirect from "./pages/auth/EntryRedirect.jsx";
 import Login from "./pages/auth/Login.jsx";
 import Onboarding from "./pages/auth/Onboarding.jsx";
 
@@ -13,6 +14,7 @@ import Dashboard from "./pages/academic/Dashboard.jsx";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/student/StudentDashboard.jsx";
 import Transcript from "./pages/student/Transcript.jsx";
+import StudentCourseCatalog from "./pages/student/StudentCourseCatalog.jsx";
 import MarketingDashboard from "./pages/finance/MarketingDashboard.jsx";
 import HR from "./pages/rh/HR.jsx";
 import Finance from "./pages/finance/Finance.jsx";
@@ -21,6 +23,7 @@ import Students from "./pages/academic/Students.jsx";
 import Courses from "./pages/general/Courses.jsx";
 import Calendar from "./pages/general/Calendar.jsx";
 import Messages from "./pages/message/Messages.jsx";
+import Chatbot from "./pages/general/Chatbot.jsx";
 import Notification from "./pages/notification/Notification.jsx";
 import Analytics from "./pages/general/Analytics.jsx";
 import Settings from "./pages/auth/Settings.jsx";
@@ -51,12 +54,11 @@ function HomeDashboard() {
 function MainRoutes() {
   return (
     <Routes>
-      {/* Écrans d'accueil / auth — publics */}
-      <Route path="/splash" element={<Splash />} />
+      {/* Routes publiques */}
+      <Route path="/splash" element={<EntryRedirect />} />
       <Route path="/login" element={<Login />} />
       <Route path="/onboarding" element={<Onboarding />} />
 
-      {/* Application principale avec Layout + auth obligatoire */}
       <Route
         element={
           <ProtectedRoute>
@@ -64,104 +66,65 @@ function MainRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* Dashboard dynamique selon le rôle — chaque rôle voit son propre dashboard */}
         <Route path="/" element={<HomeDashboard />} />
-
-        {/* Dashboards spécifiques aux rôles */}
         <Route
           path="/professeur"
-          element={
-            <ProtectedRoute allowedRoles={["professeur", "academic"]}>
-              <TeacherDashboard />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/professeur", <TeacherDashboard />)}
         />
         <Route
           path="/student"
-          element={
-            <ProtectedRoute allowedRoles={["student", "academic"]}>
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/student", <StudentDashboard />)}
         />
         <Route
           path="/student/transcript"
-          element={
-            <ProtectedRoute allowedRoles={["student"]}>
-              <Transcript />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/student/transcript", <Transcript />)}
+        />
+        <Route
+          path="/student/courses"
+          element={roleRoute("/student/courses", <StudentCourseCatalog />)}
         />
         <Route
           path="/marketing"
-          element={
-            <ProtectedRoute allowedRoles={["marketing", "academic"]}>
-              <MarketingDashboard />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/marketing", <MarketingDashboard />)}
         />
-        {/* Finance : UNIQUEMENT finance et direction — les étudiants n'ont pas accès */}
         <Route
           path="/finance"
-          element={
-            <ProtectedRoute allowedRoles={["finance", "academic"]}>
-              <Finance />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/finance", <Finance />)}
         />
-        <Route
-          path="/hr"
-          element={
-            <ProtectedRoute allowedRoles={["rh", "academic"]}>
-              <HR />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Outils communs — accessibles selon la navigation de rôle définie dans Layout */}
+        <Route path="/hr" element={roleRoute("/hr", <HR />)} />
         <Route
           path="/students"
-          element={
-            <ProtectedRoute allowedRoles={["academic", "professeur", "rh", "finance"]}>
-              <Students />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/students", <Students />)}
         />
         <Route
           path="/courses"
-          element={
-            <ProtectedRoute allowedRoles={["academic", "professeur", "student", "rh"]}>
-              <Courses />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/courses", <Courses />)}
         />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/chatbot" element={roleRoute("/chatbot", <Chatbot />)} />
         <Route path="/notifications" element={<Notification />} />
         <Route
           path="/analytics"
-          element={
-            <ProtectedRoute allowedRoles={["academic", "rh", "finance", "marketing"]}>
-              <Analytics />
-            </ProtectedRoute>
-          }
+          element={roleRoute("/analytics", <Analytics />)}
         />
         <Route path="/settings" element={<Settings />} />
       </Route>
 
-      {/* Toute route inconnue → login */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-export default function App() {
-  const [showSplash, setShowSplash] = React.useState(true);
+function roleRoute(path, page) {
+  return <ProtectedRoute allowedRoles={ROUTE_ACCESS[path]}>{page}</ProtectedRoute>;
+}
 
+export default function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        {showSplash ? <Splash onComplete={() => setShowSplash(false)} /> : <MainRoutes />}
+        <MainRoutes />
       </DataProvider>
     </AuthProvider>
   );

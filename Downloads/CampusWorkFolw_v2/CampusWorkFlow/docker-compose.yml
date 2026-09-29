@@ -5,11 +5,9 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_pass}
-    ports:
-      - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_local_dev}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_pass}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_local_dev}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -17,12 +15,9 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"   # Management UI → http://localhost:15672
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-campus_rabbit}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-rabbit_pass}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-rabbit_local_dev}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 15s
@@ -57,8 +52,6 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-campus_pass}
     volumes:
       - academic-data:/var/lib/postgresql/data
-      - ./postgres/academic_schema_tables.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./postgres/donnees_test_academic.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-campus_user} -d academic_db"]
       interval: 10s
@@ -75,7 +68,6 @@ services:
     volumes:
       - finance-data:/var/lib/postgresql/data
       - ./postgres/finance_schema_tables.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./postgres/donnees_test_finance.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-campus_user} -d finance_db"]
       interval: 10s
@@ -92,7 +84,6 @@ services:
     volumes:
       - hr-data:/var/lib/postgresql/data
       - ./postgres/hr_schema_tables.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./postgres/donnees_test_hr.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-campus_user} -d hr_db"]
       interval: 10s
@@ -136,22 +127,21 @@ services:
 
   auth-service:
     build: ./module_authentification
-    ports:
-      - "${AUTH_PORT:-8001}:8001"
     environment:
       DATABASE_URL: postgresql://${DB_USER:-campus_user}:${DB_PASSWORD:-campus_pass}@identity-db:5432/identity_db
       DATABASE_SCHEMA: public
       DB_AUTO_INIT: "true"
-      DB_AUTO_SEED: ${DB_AUTO_SEED:-true}
-      JWT_SECRET: ${JWT_SECRET}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
+      APP_ENV: ${APP_ENV:-development}
+      DB_AUTO_SEED: ${DB_AUTO_SEED:-false}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-not-for-production-00000000000000000000000000000000}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_local_dev}@redis:6379/0
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       SMTP_FROM: ${SMTP_FROM:-noreply@campus.local}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       identity-db:
         condition: service_healthy
@@ -166,15 +156,15 @@ services:
 
   academic-service:
     build: ./module_academique
-    ports:
-      - "${ACADEMIC_PORT:-8002}:8002"
     environment:
       DATABASE_URL: postgresql://${DB_USER:-campus_user}:${DB_PASSWORD:-campus_pass}@academic-db:5432/academic_db
       DATABASE_SCHEMA: academic
       DB_AUTO_INIT: "false"
-      JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
+      APP_ENV: ${APP_ENV:-development}
+      DB_AUTO_SEED: ${DB_AUTO_SEED:-false}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-not-for-production-00000000000000000000000000000000}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_local_dev}@rabbitmq:5672/
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       academic-db:
         condition: service_healthy
@@ -192,16 +182,15 @@ services:
     build:
       context: ./module_finance_marketing/finance-service
       dockerfile: Dockerfile
-    ports:
-      - "${FINANCE_PORT:-8003}:8003"
     environment:
       DATABASE_URL: postgresql://${DB_USER:-campus_user}:${DB_PASSWORD:-campus_pass}@finance-db:5432/finance_db
       DATABASE_SCHEMA: finance
       DB_AUTO_INIT: "false"
-      JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
+      APP_ENV: ${APP_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-not-for-production-00000000000000000000000000000000}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_local_dev}@rabbitmq:5672/
       NOTIFICATION_SERVICE_URL: http://notification-service:8006
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       finance-db:
         condition: service_healthy
@@ -217,15 +206,14 @@ services:
 
   hr-service:
     build: ./module_rh
-    ports:
-      - "${HR_PORT:-8004}:8004"
     environment:
       DATABASE_URL: postgresql://${DB_USER:-campus_user}:${DB_PASSWORD:-campus_pass}@hr-db:5432/hr_db
       DATABASE_SCHEMA: hr
       DB_AUTO_INIT: "false"
-      JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
+      APP_ENV: ${APP_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-not-for-production-00000000000000000000000000000000}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_local_dev}@rabbitmq:5672/
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       hr-db:
         condition: service_healthy
@@ -241,14 +229,13 @@ services:
 
   message-service:
     build: ./module_message
-    ports:
-      - "${MESSAGE_PORT:-8005}:8005"
     environment:
       DATABASE_URL: postgresql://${DB_USER:-campus_user}:${DB_PASSWORD:-campus_pass}@message-db:5432/message_db
-      JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/1
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
+      APP_ENV: ${APP_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-not-for-production-00000000000000000000000000000000}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_local_dev}@rabbitmq:5672/
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_local_dev}@redis:6379/1
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       message-db:
         condition: service_healthy
@@ -266,14 +253,13 @@ services:
 
   notification-service:
     build: ./module_notification
-    ports:
-      - "${NOTIFICATION_PORT:-8006}:8006"
     environment:
       DATABASE_URL: postgresql://${DB_USER:-campus_user}:${DB_PASSWORD:-campus_pass}@notification-db:5432/notification_db
-      JWT_SECRET: ${JWT_SECRET}
-      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/2
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
+      APP_ENV: ${APP_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-not-for-production-00000000000000000000000000000000}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_local_dev}@rabbitmq:5672/
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_local_dev}@redis:6379/2
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       notification-db:
         condition: service_healthy
@@ -296,18 +282,19 @@ services:
   gateway:
     build: ./gateway
     ports:
-      - "${GATEWAY_PORT:-3000}:3000"
+      - "127.0.0.1:${GATEWAY_PORT:-3000}:3000"
     environment:
       PORT: "3000"
-      JWT_SECRET: ${JWT_SECRET}
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_pass}@redis:6379/0
+      APP_ENV: ${APP_ENV:-development}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-not-for-production-00000000000000000000000000000000}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_local_dev}@redis:6379/0
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:8001}
       ACADEMIC_SERVICE_URL: ${ACADEMIC_SERVICE_URL:-http://academic-service:8002}
       FINANCE_SERVICE_URL: ${FINANCE_SERVICE_URL:-http://finance-service:8003}
       HR_SERVICE_URL: ${HR_SERVICE_URL:-http://hr-service:8004}
       MESSAGE_SERVICE_URL: ${MESSAGE_SERVICE_URL:-http://message-service:8005}
       NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service:8006}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       auth-service:
         condition: service_healthy
@@ -339,9 +326,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+        VITE_API_URL: ${VITE_API_URL:-/api}
     ports:
-      - "${FRONTEND_PORT:-5173}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:80"
     environment:
       BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-http://gateway:3000}
     depends_on:

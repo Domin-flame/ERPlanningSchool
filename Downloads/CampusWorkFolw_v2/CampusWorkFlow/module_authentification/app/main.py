@@ -34,6 +34,11 @@ from app.redis_client import (
 
 # ── Configuration ────────────────────────────────────────────
 SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-me")
+if os.getenv("APP_ENV", "development").lower() == "production" and (
+    len(SECRET_KEY) < 32
+    or any(marker in SECRET_KEY.lower() for marker in ("dev-secret", "change-me", "replace", "example", "sample", "local-dev"))
+):
+    raise RuntimeError("Production requires a JWT_SECRET with at least 32 characters.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24      # 24 h
 REFRESH_TOKEN_EXPIRE_DAYS = 7

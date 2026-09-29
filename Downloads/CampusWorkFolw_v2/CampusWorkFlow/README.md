@@ -68,16 +68,45 @@ RabbitMQ, ce qui garantit l'indépendance déjà annoncée dans le projet.
 
 ## 2. Démarrage
 
+> **Production :** les valeurs par défaut de Compose et `.env.example` sont
+> réservées au développement et ne doivent jamais servir au déploiement. Compose
+> ne publie que le frontend et le gateway sur loopback et désactive les données
+> de démonstration par défaut.
+> Cela ne remplace pas les migrations, TLS, sauvegardes ou la supervision.
+> Lire [`PRODUCTION_DEPLOYMENT.md`](PRODUCTION_DEPLOYMENT.md) avant toute mise
+> en production.
+
 ### Prérequis
 - Docker + Docker Compose v2
+
+### Build Windows sans Docker
+
+Pour installer les dépendances et compiler les applications sans lancer Docker,
+exécuter `build.bat` depuis l'Explorateur ou un terminal Windows. Node.js avec
+npm et Python 3 sont requis; les dépendances Python sont isolées dans un
+`.venv` par service. Le script produit le frontend dans `frontend/dist` et
+vérifie les sources Python et la passerelle.
+
+Ce build ne démarre pas les services. Pour exécuter l'application sans Docker,
+PostgreSQL, Redis et RabbitMQ doivent être installés et configurés localement,
+et les variables d'environnement de chaque service doivent pointer vers ces
+instances.
 
 ### Lancer tout le système
 
 ```bash
-cp .env.example .env   # si .env n'existe pas déjà (il est déjà fourni ici)
 docker compose up --build -d
 docker compose logs -f     # optionnel : suivre le démarrage
 ```
+
+Compose démarre avec ses valeurs locales par défaut ; aucun `.env` n'est requis.
+Pour personnaliser PostgreSQL, créer un fichier `.env` à la racine contenant
+uniquement `DB_USER` et `DB_PASSWORD` : le même compte est créé sur chacune des
+bases isolées. Les autres variables locales ont aussi des valeurs par défaut.
+PostgreSQL ne réinitialise pas les identifiants d'un volume déjà initialisé :
+si vous réutilisez des volumes existants, gardez les identifiants qui ont servi
+à les créer. Ne supprimez pas les volumes pour corriger un problème de mot de
+passe sans sauvegarder vos données au préalable.
 
 Le démarrage prend 30 à 90 secondes (healthchecks PostgreSQL/RabbitMQ
 avant que chaque service ne parte). Une fois prêt :
@@ -85,6 +114,11 @@ avant que chaque service ne parte). Une fois prêt :
 - **Frontend** : http://localhost:5173
 - **Gateway / API** : http://localhost:3000/api
 - **RabbitMQ management UI** : http://localhost:15672 (identifiants dans `.env`)
+- **Assistant Campus** : accessible après connexion depuis le menu de navigation
+
+L’assistant guide les utilisateurs dans les pages de l’ERP à partir de réponses
+locales prédéfinies. Il n’a pas besoin de clé d’IA externe et ne consulte ni ne
+modifie les données personnelles.
 
 ### Arrêter / réinitialiser
 
@@ -97,11 +131,12 @@ docker compose down -v         # arrêt + suppression des volumes (repart de zé
 
 ## 3. Comptes de test
 
-**Aucune donnée fictive n'est pré-remplie**, à l'exception des **6 comptes
-de démonstration ci-dessous** (un par rôle du système — le projet définit
-6 rôles, pas 4, chacun correspondant à un module métier). Tout le reste
-(étudiants, cours, factures, employés, messages...) se construit au fur et
-à mesure de l'utilisation réelle de l'application.
+Les comptes de démonstration ne sont créés que si `DB_AUTO_SEED=true` est
+explicitement activé dans `.env`. Ils sont réservés au développement et
+utilisent tous le mot de passe faible `password123`; ne les activez jamais en
+production. Les exemples SQL présents dans les anciennes bases Finance/RH ne
+sont plus montés par Compose. Pour le catalogue académique, un petit jeu de
+données de test peut être activé explicitement avec `DB_AUTO_SEED=true`.
 
 | Email | Mot de passe | Rôle | Accès |
 |---|---|---|---|
@@ -112,10 +147,9 @@ de démonstration ci-dessous** (un par rôle du système — le projet définit
 | `finance@campus.edu` | `password123` | Responsable financier | Factures, paiements, campagnes |
 | `marketing@campus.edu` | `password123` | Responsable marketing | Campagnes, leads |
 
-Ces comptes sont créés automatiquement au premier démarrage par
-`module_authentification/docker-entrypoint.sh` (activé via
-`DB_AUTO_SEED=true` dans `.env`). Les mots de passe sont hachés en bcrypt
-en base, jamais stockés en clair.
+Les mots de passe de ces comptes de développement sont hachés en bcrypt en
+base, mais cela ne rend pas ces identifiants appropriés pour un environnement
+de production.
 
 ---
 

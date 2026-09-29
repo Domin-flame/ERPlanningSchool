@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
 import StatCard from "../../components/StatCard.jsx";
 import Badge from "../../components/Badge.jsx";
-import Modal from "../../components/Modal.jsx";
 import Toast from "../../components/Toast.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
+import GradeEntryModal from "./GradeEntryModal.jsx";
+import AttendanceModal from "./AttendanceModal.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import {
   fetchTeacherWorkspace,
@@ -382,35 +384,32 @@ export default function TeacherDashboard() {
     <div className="page-animate">
       <Breadcrumbs items={[{ label: "Accueil" }, { label: "Espace Enseignant" }]} />
 
-      <div className="page-head">
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2>Bonjour, {user?.full_name || user?.name || "Professeur"} 👋</h2>
-            <span className="role-pill professeur">Portail Professeur</span>
-          </div>
-          <p className="muted">
-            Gestion de vos cours, suivi des présences et saisie des évaluations.
-          </p>
-        </div>
-        <div className="actions">
-          <button
-            className="btn"
-            onClick={openAttendanceModal}
-            disabled={offerings.length === 0}
-            title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
-          >
-            📋 Faire l'appel
-          </button>
-          <button
-            className="btn primary"
-            onClick={() => openGradeModal()}
-            disabled={offerings.length === 0}
-            title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
-          >
-            ✏️ Saisir des notes
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title={`Bonjour, ${user?.full_name || user?.name || "Professeur"} 👋`}
+        description="Gestion de vos cours, suivi des présences et saisie des évaluations."
+        badge="Portail Professeur"
+        badgeClass="professeur"
+        actions={
+          <>
+            <button
+              className="btn"
+              onClick={openAttendanceModal}
+              disabled={offerings.length === 0}
+              title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
+            >
+              📋 Faire l'appel
+            </button>
+            <button
+              className="btn primary"
+              onClick={() => openGradeModal()}
+              disabled={offerings.length === 0}
+              title={offerings.length === 0 ? "Aucun cours attribué" : undefined}
+            >
+              ✏️ Saisir des notes
+            </button>
+          </>
+        }
+      />
 
       {/* Cartes de statistiques (calculées à partir des données réelles) */}
       <div className="grid stats">
@@ -585,237 +584,58 @@ export default function TeacherDashboard() {
         </>
       )}
 
-      {/* Modal Saisie des Notes */}
-      <Modal
+      <GradeEntryModal
         open={modalGrade}
-        title="Évaluer & Saisir une Note"
         onClose={() => setModalGrade(false)}
-        footer={
-          <>
-            <button className="btn" onClick={() => setModalGrade(false)} disabled={gradeSaving}>
-              Annuler
-            </button>
-            <button className="btn primary" onClick={handleSaveGrade} disabled={gradeSaving}>
-              {gradeSaving ? "Enregistrement..." : "Valider la Note"}
-            </button>
-          </>
-        }
-      >
-        <form onSubmit={handleSaveGrade} className="form-grid">
-          {gradeFormError && (
-            <div className="full" style={{ color: "var(--danger, #d33)", fontSize: 13 }}>
-              {gradeFormError}
-            </div>
-          )}
+        onSave={handleSaveGrade}
+        saving={gradeSaving}
+        error={gradeFormError}
+        offerings={offerings}
+        courseOfferingId={gradeCourseOfferingId}
+        onCourseChange={(event) => {
+          const id = event.target.value;
+          setGradeCourseOfferingId(id);
+          setGradeEnrollmentId("");
+          setGradeExamId(latestExamFor(exams, Number(id))?.exam_id ?? "");
+        }}
+        mode={gradeMode}
+        onModeChange={setGradeMode}
+        examId={gradeExamId}
+        onExamChange={(event) => setGradeExamId(event.target.value)}
+        exams={gradeCourseExams}
+        newExamType={newExamType}
+        onNewExamTypeChange={setNewExamType}
+        newExamDate={newExamDate}
+        onNewExamDateChange={setNewExamDate}
+        newExamWeight={newExamWeight}
+        onNewExamWeightChange={setNewExamWeight}
+        newExamMaxScore={newExamMaxScore}
+        onNewExamMaxScoreChange={setNewExamMaxScore}
+        roster={gradeCourseRoster}
+        enrollmentId={gradeEnrollmentId}
+        onEnrollmentChange={(event) => setGradeEnrollmentId(event.target.value)}
+        score={gradeScore}
+        onScoreChange={setGradeScore}
+      />
 
-          <label className="full">
-            Cours / Module *
-            <select
-              className="field"
-              value={gradeCourseOfferingId}
-              onChange={(e) => {
-                const id = e.target.value;
-                setGradeCourseOfferingId(id);
-                setGradeEnrollmentId("");
-                setGradeExamId(latestExamFor(exams, Number(id))?.exam_id ?? "");
-              }}
-            >
-              {offerings.map((o) => (
-                <option key={o.course_offering_id} value={o.course_offering_id}>
-                  {o.course?.code} - {o.name || o.course?.title}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="full" style={{ display: "flex", gap: 16 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 400 }}>
-              <input
-                type="radio"
-                checked={gradeMode === "existing"}
-                onChange={() => setGradeMode("existing")}
-              />
-              Épreuve existante
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 400 }}>
-              <input type="radio" checked={gradeMode === "new"} onChange={() => setGradeMode("new")} />
-              Nouvelle épreuve
-            </span>
-          </label>
-
-          {gradeMode === "existing" ? (
-            <label className="full">
-              Épreuve / Évaluation *
-              <select
-                className="field"
-                value={gradeExamId}
-                onChange={(e) => setGradeExamId(e.target.value)}
-              >
-                <option value="">— Sélectionner —</option>
-                {gradeCourseExams.map((ex) => (
-                  <option key={ex.exam_id} value={ex.exam_id}>
-                    {ex.exam_type} ({ex.exam_date}) — sur {Number(ex.max_score)}
-                  </option>
-                ))}
-              </select>
-              {gradeCourseExams.length === 0 && (
-                <span className="muted" style={{ fontSize: 12 }}>
-                  Aucune épreuve enregistrée pour ce cours — créez-en une nouvelle.
-                </span>
-              )}
-            </label>
-          ) : (
-            <>
-              <label>
-                Nom de l'épreuve *
-                <input
-                  type="text"
-                  className="field"
-                  value={newExamType}
-                  onChange={(e) => setNewExamType(e.target.value)}
-                  placeholder="e.g. Examen Final"
-                />
-              </label>
-              <label>
-                Date de l'épreuve *
-                <input
-                  type="date"
-                  className="field"
-                  value={newExamDate}
-                  onChange={(e) => setNewExamDate(e.target.value)}
-                />
-              </label>
-              <label>
-                Coefficient (%) *
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  className="field"
-                  value={newExamWeight}
-                  onChange={(e) => setNewExamWeight(e.target.value)}
-                />
-              </label>
-              <label>
-                Barème (note max) *
-                <input
-                  type="number"
-                  min="1"
-                  className="field"
-                  value={newExamMaxScore}
-                  onChange={(e) => setNewExamMaxScore(e.target.value)}
-                />
-              </label>
-            </>
-          )}
-
-          <label className="full">
-            Étudiant concerné *
-            <select
-              className="field"
-              value={gradeEnrollmentId}
-              onChange={(e) => setGradeEnrollmentId(e.target.value)}
-            >
-              <option value="">— Sélectionner —</option>
-              {gradeCourseRoster.map((r) => (
-                <option key={r.enrollment_id} value={r.enrollment_id}>
-                  {r.name} {r.student?.matricule ? `(${r.student.matricule})` : ""}
-                </option>
-              ))}
-            </select>
-            {gradeCourseRoster.length === 0 && (
-              <span className="muted" style={{ fontSize: 12 }}>
-                Aucun étudiant actif inscrit sur ce cours.
-              </span>
-            )}
-          </label>
-
-          <label className="full">
-            Note attribuée *
-            <input
-              type="number"
-              step="0.25"
-              min="0"
-              max={gradeMode === "new" ? newExamMaxScore || undefined : undefined}
-              className="field"
-              value={gradeScore}
-              onChange={(e) => setGradeScore(e.target.value)}
-              required
-            />
-          </label>
-        </form>
-      </Modal>
-
-      {/* Modal Feuille de Présence */}
-      <Modal
+      <AttendanceModal
         open={modalAttendance}
-        title="Fiche d'Appel & Présence"
         onClose={() => setModalAttendance(false)}
-        footer={
-          <>
-            <button className="btn" onClick={() => setModalAttendance(false)} disabled={attendanceSaving}>
-              Fermer
-            </button>
-            <button className="btn primary" onClick={handleSaveAttendance} disabled={attendanceSaving}>
-              {attendanceSaving ? "Enregistrement..." : "Soumettre la feuille d'appel"}
-            </button>
-          </>
+        onSave={handleSaveAttendance}
+        saving={attendanceSaving}
+        error={attendanceFormError}
+        offerings={offerings}
+        courseOfferingId={attendanceCourseOfferingId}
+        onCourseChange={(event) => handleAttendanceCourseChange(event.target.value)}
+        roster={attendanceRoster}
+        attendance={attendanceState}
+        onAttendanceChange={(enrollmentId, present) =>
+          setAttendanceState((previous) => ({
+            ...previous,
+            [enrollmentId]: present ? "Present" : "Absent",
+          }))
         }
-      >
-        {attendanceFormError && (
-          <div style={{ color: "var(--danger, #d33)", fontSize: 13, marginBottom: 12 }}>
-            {attendanceFormError}
-          </div>
-        )}
-
-        <label className="full" style={{ display: "block", marginBottom: 16 }}>
-          Cours *
-          <select
-            className="field"
-            value={attendanceCourseOfferingId}
-            onChange={(e) => handleAttendanceCourseChange(e.target.value)}
-          >
-            {offerings.map((o) => (
-              <option key={o.course_offering_id} value={o.course_offering_id}>
-                {o.course?.code} - {o.name || o.course?.title}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {attendanceRoster.length === 0 ? (
-          <p className="muted">Aucun étudiant actif inscrit sur ce cours.</p>
-        ) : (
-          <div className="attendance-list">
-            {attendanceRoster.map((r) => (
-              <div key={r.enrollment_id} className="attendance-item">
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div className="avatar-sm">{getInitials(r.name)}</div>
-                  <div>
-                    <strong>{r.name}</strong>
-                    <p className="muted" style={{ fontSize: 12, margin: 0 }}>
-                      {r.program?.name || r.student?.matricule || ""}
-                    </p>
-                  </div>
-                </div>
-                <label className="check-switch">
-                  <input
-                    type="checkbox"
-                    checked={attendanceState[r.enrollment_id] === "Present"}
-                    onChange={(e) =>
-                      setAttendanceState((prev) => ({
-                        ...prev,
-                        [r.enrollment_id]: e.target.checked ? "Present" : "Absent",
-                      }))
-                    }
-                  />
-                  <span>{attendanceState[r.enrollment_id] === "Present" ? "Présent" : "Absent"}</span>
-                </label>
-              </div>
-            ))}
-          </div>
-        )}
-      </Modal>
+      />
 
       <Toast show={toastShow} message={toastMessage} sub="Mise à jour enregistrée" />
     </div>

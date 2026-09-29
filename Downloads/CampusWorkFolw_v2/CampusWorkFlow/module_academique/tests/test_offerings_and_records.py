@@ -80,6 +80,8 @@ def full_context(client):
         "semester": semester,
         "teacher": teacher,
         "student": student,
+        "student_user": student_user,
+        "program": program,
     }
 
 
@@ -99,6 +101,14 @@ def test_course_offering_creation(client, full_context):
 
 
 def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
+    teacher_headers = {
+        "X-User-Role": "professeur",
+        "X-User-Email": "prof.martin@example.com",
+    }
+    student_headers = {
+        "X-User-ID": str(full_context["student_user"]["user_id"]),
+        "X-User-Role": "student",
+    }
     offering = client.post(
         "/course-offerings/",
         json={
@@ -147,6 +157,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "max_score": "20.00",
             "course_offering_id": offering["course_offering_id"],
         },
+        headers=teacher_headers,
     )
     assert exam.status_code == 201
     exam = exam.json()
@@ -160,6 +171,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "student_id": full_context["student"]["student_id"],
             "course_offering_id": offering["course_offering_id"],
         },
+        headers=student_headers,
     )
     assert enrollment.status_code == 201
     enrollment = enrollment.json()
@@ -173,6 +185,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "student_id": full_context["student"]["student_id"],
             "course_offering_id": offering["course_offering_id"],
         },
+        headers=student_headers,
     )
     assert duplicate.status_code == 400
 
@@ -187,6 +200,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "exam_id": exam["exam_id"],
             "enrollment_id": enrollment["enrollment_id"],
         },
+        headers=teacher_headers,
     )
     assert grade.status_code == 201
     assert grade.json()["score"] == "15.50"
@@ -200,6 +214,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "topic_covered": "Introduction au SQL",
             "schedule_id": schedule["schedule_id"],
         },
+        headers=teacher_headers,
     )
     assert session.status_code == 201
     session = session.json()
@@ -212,6 +227,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "session_id": session["session_id"],
             "enrollment_id": enrollment["enrollment_id"],
         },
+        headers=teacher_headers,
     )
     assert attendance.status_code == 201
     assert attendance.json()["status"] == "Present"
@@ -220,3 +236,46 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
     assert len(client.get("/enrollments/").json()) == 1
     assert len(client.get("/grades/").json()) == 1
     assert len(client.get("/attendances/").json()) == 1
+
+
+def test_student_cannot_enroll_another_student(client, full_context):
+    other_user = client.post(
+        "/users/",
+        json={"name": "Autre étudiant", "email": "other@example.com", "role": "Student"},
+    ).json()
+    other_student = client.post(
+        "/students/",
+        json={
+            "matricule": "MAT-2025-011",
+            "enrollment_date": "2025-09-01",
+            "status": "Active",
+            "program_id": full_context["program"]["program_id"],
+            "user_id": other_user["user_id"],
+        },
+    ).json()
+    offering = client.post(
+        "/course-offerings/",
+        json={
+            "name": "SQL avancé - Groupe A",
+            "campus_id": full_context["campus"]["campus_id"],
+            "teacher_id": full_context["teacher"]["teacher_id"],
+            "course_id": full_context["course"]["course_id"],
+            "semester_id": full_context["semester"]["semester_id"],
+        },
+    ).json()
+
+    response = client.post(
+        "/enrollments/",
+        json={
+            "status": "Active",
+            "enrollment_date": "2025-09-05",
+            "student_id": other_student["student_id"],
+            "course_offering_id": offering["course_offering_id"],
+        },
+        headers={
+            "X-User-ID": str(full_context["student_user"]["user_id"]),
+            "X-User-Role": "student",
+        },
+    )
+
+    assert response.status_code == 403

@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,12 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"Warning creating schema {DATABASE_SCHEMA}: {e}")
     Base.metadata.create_all(bind=engine)
+    if os.getenv("DB_AUTO_SEED", "false").lower() in {"1", "true", "yes"}:
+        seed_sql = Path(__file__).resolve().parent.parent / "seed_data.sql"
+        with engine.begin() as conn:
+            for statement in seed_sql.read_text(encoding="utf-8").split(";"):
+                if statement.strip():
+                    conn.exec_driver_sql(statement)
     yield
 
 

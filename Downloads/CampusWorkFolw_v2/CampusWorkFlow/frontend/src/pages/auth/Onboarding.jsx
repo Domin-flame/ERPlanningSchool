@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLogo from "../../components/AppLogo.jsx";
-
-const ONBOARDING_STORAGE_KEY = "campusworkflow_onboarding_seen";
+import { ONBOARDING_STORAGE_KEY } from "../../app/access.js";
 
 const STEPS = [
   {

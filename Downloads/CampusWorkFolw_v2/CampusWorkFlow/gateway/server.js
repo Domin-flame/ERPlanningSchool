@@ -12,6 +12,17 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+if (
+  process.env.APP_ENV === 'production' &&
+  (
+    JWT_SECRET.length < 32 ||
+    ['dev-secret', 'change-me', 'replace', 'example', 'sample', 'local-dev'].some((marker) =>
+      JWT_SECRET.toLowerCase().includes(marker)
+    )
+  )
+) {
+  throw new Error('Production requires a JWT_SECRET with at least 32 characters.');
+}
 
 // ── Services ─────────────────────────────────────────────────
 const SERVICES = {
@@ -25,8 +36,15 @@ const SERVICES = {
 
 // ── Middlewares ────────────────────────────────────────────────
 app.use(helmet());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin(origin, callback) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(morgan('combined'));
@@ -107,6 +125,10 @@ const RBAC_RULES = [
   // HR — 'student' et 'marketing' n'ont aucun accès au module RH.
   { prefix: '/api/hr', allow: ['academic', 'rh', 'finance', 'professeur'] },
 
+  // Les étudiants peuvent créer uniquement leur propre inscription ; le
+  // service académique vérifie l'identité du propriétaire de student_id.
+  { prefix: '/api/academic/enrollments', methods: new Set(['POST']), allow: ['academic', 'student'] },
+
   // Académique — lecture ouverte à tous les rôles authentifiés (portails
   // Dashboard/Analytics en ont besoin) ; écriture réservée à la Direction
   // (academic) et aux enseignants (ex : saisie de notes / présences).
@@ -124,11 +146,12 @@ const RBAC_RULES = [
 function rbacGuard(req, res, next) {
   if (!req.user) return next(); // routes publiques déjà filtrées par verifyToken
 
-  const rule = RBAC_RULES.find((r) => req.originalUrl.startsWith(r.prefix));
+  const rule = RBAC_RULES.find(
+    (r) =>
+      req.originalUrl.startsWith(r.prefix) &&
+      (!r.methods || r.methods.has(req.method))
+  );
   if (!rule) return next();
-
-  const methodGuarded = !rule.methods || rule.methods.has(req.method);
-  if (!methodGuarded) return next();
 
   const role = (req.user.role || '').toLowerCase();
   if (!rule.allow.includes(role)) {
@@ -226,6 +249,50 @@ app.get('/api/services/health', async (req, res) => {
     })
   );
   res.json(checks);
+});
+
+const CHATBOT_RESPONSES = [
+  {
+    match: ['emploi du temps', 'planning', 'horaire', 'calendrier'],
+    reply: 'Pour consulter votre emploi du temps, ouvrez « Examens & Plannings » ou « Mon Emploi du temps » dans le menu. Les horaires affichés dépendent des données publiées par votre établissement.',
+  },
+  {
+    match: ['cours', 'catalogue', 'inscription', 'inscrire'],
+    reply: 'Le catalogue est accessible depuis « Catalogue Cours » ou « Catalogue & inscriptions ». Les étudiants peuvent consulter les offres et demander une inscription depuis leur portail.',
+  },
+  {
+    match: ['note', 'releve', 'résultat', 'resultat', 'bulletin'],
+    reply: 'Les étudiants peuvent consulter leurs résultats dans « Mon relevé de notes ». Les enseignants saisissent les notes depuis leur espace. Je ne peux pas afficher de données personnelles dans cette conversation.',
+  },
+  {
+    match: ['facture', 'paiement', 'finance', 'frais'],
+    reply: 'Les informations de facturation sont disponibles dans le portail Finance. Si vous êtes étudiant, consultez votre tableau de bord ou contactez le service financier via la messagerie.',
+  },
+  {
+    match: ['mot de passe', 'connexion', 'connecter', 'compte', 'profil'],
+    reply: 'En cas de problème de connexion, utilisez « Mot de passe oublié » sur la page de connexion. Vous pouvez modifier les informations de votre profil depuis « Mon Profil » après connexion.',
+  },
+  {
+    match: ['message', 'messagerie', 'contacter', 'contact'],
+    reply: 'La messagerie interne est accessible depuis « Messagerie » dans le menu. Elle permet de contacter les personnes disponibles dans l’annuaire selon les droits de votre rôle.',
+  },
+  {
+    match: ['rh', 'conge', 'congé', 'paie', 'employe', 'employé'],
+    reply: 'Les fonctions RH sont regroupées dans « Personnel & Paie » ou « Tableau de Bord RH ». Si vous n’y avez pas accès, contactez un administrateur de votre établissement.',
+  },
+];
+
+app.post('/api/chatbot/message', verifyToken, (req, res) => {
+  const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+  if (!message) return res.status(400).json({ detail: 'Saisissez une question.' });
+  if (message.length > 1000) return res.status(413).json({ detail: 'La question ne peut pas dépasser 1 000 caractères.' });
+
+  const normalized = message.toLocaleLowerCase('fr');
+  const answer = CHATBOT_RESPONSES.find(({ match }) => match.some((keyword) => normalized.includes(keyword)));
+  res.json({
+    reply: answer?.reply || 'Je peux vous guider dans l’application pour les cours, les inscriptions, l’emploi du temps, les notes, la facturation, la messagerie et les services RH. Essayez une question sur l’un de ces sujets ou contactez votre administration.',
+    suggestions: ['Consulter mon emploi du temps', 'Où trouver le catalogue des cours ?', 'Comment contacter un enseignant ?'],
+  });
 });
 
 // ── Proxy routes ───────────────────────────────────────────────

@@ -25,7 +25,7 @@ function formatNumber(value) {
 
 export default function Analytics() {
   const { user } = useAuth();
-  const { courses, students, employees, invoices, leads } = useData();
+  const { employees, invoices, leads } = useData();
   const role = user?.role || "academic";
 
   const [summary, setSummary] = useState(null);
@@ -90,7 +90,10 @@ export default function Analytics() {
   }, [role, employees, invoices, leads]);
 
   // ---- Répartition des étudiants par statut (donut réel) ----
-  const statusDistribution = summary?.student_status_distribution || [];
+  const statusDistribution = useMemo(
+    () => summary?.student_status_distribution || [],
+    [summary]
+  );
   const statusTotal = statusDistribution.reduce((sum, s) => sum + s.count, 0);
   const donutGradient = useMemo(() => {
     if (statusTotal === 0) return null;

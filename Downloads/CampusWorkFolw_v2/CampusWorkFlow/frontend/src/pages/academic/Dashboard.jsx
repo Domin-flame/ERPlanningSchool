@@ -1,14 +1,13 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
+import PageHeader from "../../components/PageHeader.jsx";
 import StatCard from "../../components/StatCard.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const { courses, students, loading, errors } = useData();
   const navigate = useNavigate();
 
@@ -24,38 +23,27 @@ export default function Dashboard() {
       </div>
     );
   }
-// il faudrait que le bouton de rapport globale fonctionne : il faut encore que je définisse ce qui va apparaitre dans ce rapport globale 
-// il faut améliorer le formulaire pour ajouter des cours et le connecter effectivement au backend pour que le cours soit immédiatement disponible une fois qu'il a été ajouté
-// la card étudiant inscrit doit nous donner réellement le nombre d'étudiant inscrits sur la plateforme et lorsque l'on clique dessus on peut voir la liste des étudiants avec leurs informations, on peut les ajouter à un programme, modifier leurs informations autres que leurs identifiants par exemple on peut changer la filière mais pas le nom de l'étudiant
-//la card cours aux catalogues nous permet de voir la liste des cours disponibles regroupés par catégories lorsqu'on clique dessus,
-// la card session d'examen permet à ce que l'on puisse voir toutes les sessions d'examen en cours et passé, qu'on puisse en créer une nouvelle en créant le planning de celleci et cela peut etre partagé par message sur la plateforme
-//taux de réussite nous permet de voir le taux de réussite des étudiants aux examens et lorsqu'on clique dessus on a plus de détail comme le taux de réussite par matière etc
-//la card gestion des étudiants nous permet d'avoir accès au dossier complet d'un étudiant que ce soit toutes ces notes et l'ensemble des cours qu'il a suivi, etc
-// la card gestion des cours nous permet de créer les emplois du temps, d'affecter tel ou telle professeur à un cours : la liste des professeurs disponibles et fournit par le module_rh, d'attribuer une salle à chaque cours 
-// la card examen et planning permet de voir le calendrier des épreuves et des résultats : d'ailleurs c'est la sous-section transcript du module_academic qui publie les résultats des élèves et qui gére les complaintes liés à celle-ci
-
   return (
     <div className="page-animate">
       <Breadcrumbs items={[{ label: "Accueil" }, { label: "Direction Académique" }, { label: "Dashboard" }]} />
 
-      <div className="page-head">
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2>Tableau de Bord Académique</h2>
-            <span className="role-pill academic">Direction</span>
-          </div>
-          <p className="muted">Vue globale sur les formations, effectifs et performances scolaires.</p>
-        </div>
-        <div className="actions">
-          <Link className="btn" to="/analytics">📊 Rapport Global</Link>
-          <button
-            className="btn primary"
-            onClick={() => navigate("/courses", { state: { openCreateCourse: true } })}
-          >
-            + Créer un cours
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Tableau de bord académique"
+        description="Vue globale sur les formations, effectifs et performances scolaires."
+        badge="Direction"
+        badgeClass="academic"
+        actions={
+          <>
+            <Link className="btn" to="/analytics">📊 Rapport Global</Link>
+            <button
+              className="btn primary"
+              onClick={() => navigate("/courses", { state: { openCreateCourse: true } })}
+            >
+              + Créer un cours
+            </button>
+          </>
+        }
+      />
 
       {(errors.courses || errors.students) && (
         <div style={{ background: "var(--danger-bg)", color: "var(--danger)", padding: "10px 16px", borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
@@ -87,7 +75,14 @@ export default function Dashboard() {
             icon="📚"
             title="Aucun cours dans le catalogue"
             description="Créez le premier cours pour commencer."
-            action={<button className="btn primary" onClick={() => setModal(true)}>+ Créer un cours</button>}
+            action={
+              <button
+                className="btn primary"
+                onClick={() => navigate("/courses", { state: { openCreateCourse: true } })}
+              >
+                + Créer un cours
+              </button>
+            }
           />
         ) : (
           <table>

@@ -5,7 +5,6 @@ import Badge from "../../components/Badge.jsx";
 import Modal from "../../components/Modal.jsx";
 import Toast from "../../components/Toast.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 
 // remplacer par des données réelles dans la base de données 
@@ -20,7 +19,6 @@ const CAMPAIGNS = [
 //il faut que je réflechisse encore bien sur la liste des fonctionnalités de ce module et surtout celles qui sont indispensables pour une première version
 
 export default function MarketingDashboard() {
-  const { user } = useAuth();
   const { leads, addLead, updateLeadStatus, loading } = useData();
 
   const [modalLead, setModalLead] = useState(false);
