@@ -12,12 +12,9 @@ payment data.
 - Override all local fallback credentials (`DB_USER`, `DB_PASSWORD`,
   `REDIS_PASSWORD`, `RABBITMQ_USER`, `RABBITMQ_PASS`, and `JWT_SECRET`) with
   unique values from a protected deployment secret store. Every PostgreSQL
-  database uses the shared `DB_USER` and `DB_PASSWORD` settings.
-- Supply non-empty `DB_USER`, `DB_PASSWORD`, `REDIS_PASSWORD`,
-  `RABBITMQ_USER`, `RABBITMQ_PASS`, and `JWT_SECRET` through a protected
-  deployment secret store. Use randomly generated values; the JWT secret must
-  be at least 32 characters. Production startup rejects known placeholders and
-  short JWT secrets.
+  database uses the same `DB_USER` and `DB_PASSWORD`. Use randomly generated
+  values; the JWT secret must be at least 32 characters. Production startup
+  rejects known placeholders and short JWT secrets.
 - Set `DB_AUTO_SEED=false`. Do not enable the authentication demo-account
   seed or the academic catalogue seed.
 - Set `ALLOWED_ORIGINS` to the exact HTTPS origin(s) serving the frontend.

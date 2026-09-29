@@ -103,6 +103,10 @@ Compose démarre avec ses valeurs locales par défaut ; aucun `.env` n'est requi
 Pour personnaliser PostgreSQL, créer un fichier `.env` à la racine contenant
 uniquement `DB_USER` et `DB_PASSWORD` : le même compte est créé sur chacune des
 bases isolées. Les autres variables locales ont aussi des valeurs par défaut.
+PostgreSQL ne réinitialise pas les identifiants d'un volume déjà initialisé :
+si vous réutilisez des volumes existants, gardez les identifiants qui ont servi
+à les créer. Ne supprimez pas les volumes pour corriger un problème de mot de
+passe sans sauvegarder vos données au préalable.
 
 Le démarrage prend 30 à 90 secondes (healthchecks PostgreSQL/RabbitMQ
 avant que chaque service ne parte). Une fois prêt :
