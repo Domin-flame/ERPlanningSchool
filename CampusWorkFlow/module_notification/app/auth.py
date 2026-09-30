@@ -33,3 +33,14 @@ def get_current_user(
     role = payload.get("role")
     user_id = payload.get("user_id")
     return CurrentUser(sub=sub, role=role, user_id=user_id)
+
+
+def decode_token(token: str | None) -> CurrentUser | None:
+    """Décode un JWT transmis hors en-tête (ex. query string WebSocket)."""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except JWTError:
+        return None
+    return CurrentUser(sub=payload.get("sub"), role=payload.get("role"), user_id=payload.get("user_id"))

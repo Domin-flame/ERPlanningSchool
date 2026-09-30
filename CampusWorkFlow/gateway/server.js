@@ -164,6 +164,11 @@ function rbacGuard(req, res, next) {
 
 async function messageConversationGuard(req, res, next) {
   if (req.method !== 'POST' || !req.user) return next();
+  // Seule la création de conversation choisit des destinataires ; l'envoi
+  // d'un message (POST /messages/) est contrôlé par le message-service
+  // (l'expéditeur doit être participant de la conversation).
+  const routePath = req.path.replace(/\/+$/, '');
+  if (routePath !== '/conversations') return next();
   const participantIds = req.body?.participant_ids;
   if (!Array.isArray(participantIds) || participantIds.length === 0) {
     return res.status(400).json({ detail: 'Au moins un destinataire est requis' });
@@ -388,7 +393,69 @@ app.use((err, req, res, next) => {
   res.status(500).json({ detail: 'Erreur interne du gateway' });
 });
 
-app.listen(PORT, () => {
+// ── WebSockets temps réel ──────────────────────────────────────
+// Le navigateur ne peut pas envoyer d'en-tête Authorization lors d'un
+// handshake WebSocket : l'access token est transmis en query (`?token=`),
+// vérifié ici puis relayé au microservice qui le revérifie.
+//   /api/ws/notifications          → notification-service /ws/notifications/{user_id du JWT}
+//   /api/ws/messages/{conversation} → message-service /ws/messages/{conversation}
+function makeWsProxy(target, serviceName) {
+  return createProxyMiddleware({
+    target,
+    changeOrigin: true,
+    ws: true,
+    logLevel: 'warn',
+    onError: (err, req, socket) => {
+      console.error(`[Gateway] ${serviceName} websocket error:`, err.message);
+      if (socket && typeof socket.destroy === 'function') socket.destroy();
+    },
+  });
+}
+
+const wsProxies = {
+  notification: makeWsProxy(SERVICES.notification, 'notification'),
+  message: makeWsProxy(SERVICES.message, 'message'),
+};
+
+function rejectUpgrade(socket, status, reason) {
+  socket.write(`HTTP/1.1 ${status} ${reason}\r\nConnection: close\r\n\r\n`);
+  socket.destroy();
+}
+
+function handleUpgrade(req, socket, head) {
+  let url;
+  try {
+    url = new URL(req.url, 'http://gateway.local');
+  } catch {
+    return rejectUpgrade(socket, 400, 'Bad Request');
+  }
+
+  const token = url.searchParams.get('token');
+  let user;
+  try {
+    user = token ? jwt.verify(token, JWT_SECRET) : null;
+  } catch {
+    user = null;
+  }
+
+  const notifMatch = url.pathname === '/api/ws/notifications';
+  const messageMatch = url.pathname.match(/^\/api\/ws\/messages\/([A-Za-z0-9_-]{1,64})$/);
+  if (!notifMatch && !messageMatch) return rejectUpgrade(socket, 404, 'Not Found');
+  if (!user || user.user_id === undefined || user.user_id === null) {
+    return rejectUpgrade(socket, 401, 'Unauthorized');
+  }
+
+  const query = `?token=${encodeURIComponent(token)}`;
+  if (notifMatch) {
+    req.url = `/ws/notifications/${encodeURIComponent(String(user.user_id))}${query}`;
+    return wsProxies.notification.upgrade(req, socket, head);
+  }
+  req.url = `/ws/messages/${messageMatch[1]}${query}`;
+  return wsProxies.message.upgrade(req, socket, head);
+}
+
+const server = app.listen(PORT, () => {
   console.log(`🚀 API Gateway sur le port ${PORT}`);
   Object.entries(SERVICES).forEach(([n, u]) => console.log(`   → ${n}: ${u}`));
 });
+server.on('upgrade', handleUpgrade);

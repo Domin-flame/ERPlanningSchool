@@ -1,11 +1,12 @@
 import asyncio
-import json
 import logging
 import os
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
+from app import realtime
+from app.auth import decode_token
 from app.database import Base, engine
 from sqlalchemy import text
 from app.rabbitmq_consumer import start_consumer
@@ -44,32 +45,21 @@ app.include_router(notifications.router)
 
 
 # ── WebSocket push ────────────────────────────────────────────
-# Dictionnaire user_id → liste de WebSockets actifs
-_ws_connections: dict[int, list[WebSocket]] = {}
-
-
-async def broadcast_to_user(user_id: int, payload: dict) -> None:
-    sockets = _ws_connections.get(user_id, [])
-    dead = []
-    for ws in sockets:
-        try:
-            await ws.send_text(json.dumps(payload))
-        except Exception:
-            dead.append(ws)
-    for ws in dead:
-        sockets.remove(ws)
-
-
 @app.websocket("/ws/notifications/{user_id}")
-async def ws_notifications(websocket: WebSocket, user_id: int):
+async def ws_notifications(websocket: WebSocket, user_id: int, token: str | None = None):
     """
     WebSocket pour les notifications temps réel.
-    Le client se connecte avec son user_id après authentification.
-    Le gateway doit vérifier le token avant d'autoriser la connexion.
+    Le client transmet son access token (`?token=`) ; la connexion est
+    refusée si le jeton est invalide ou ne correspond pas à `user_id`.
     """
+    current = decode_token(token)
+    if current is None or current.user_id is None or int(current.user_id) != user_id:
+        await websocket.close(code=1008)
+        return
+
     await websocket.accept()
-    _ws_connections.setdefault(user_id, []).append(websocket)
-    logger.info("[WS] user %s connecté (%d sockets actifs)", user_id, len(_ws_connections[user_id]))
+    realtime.register(user_id, websocket)
+    logger.info("[WS] user %s connecté (%d sockets actifs)", user_id, len(realtime.connections.get(user_id, [])))
 
     try:
         while True:
@@ -78,9 +68,7 @@ async def ws_notifications(websocket: WebSocket, user_id: int):
             if data == "ping":
                 await websocket.send_text("pong")
     except WebSocketDisconnect:
-        sockets = _ws_connections.get(user_id, [])
-        if websocket in sockets:
-            sockets.remove(websocket)
+        realtime.unregister(user_id, websocket)
         logger.info("[WS] user %s déconnecté", user_id)
 
 

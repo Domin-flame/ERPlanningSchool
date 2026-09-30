@@ -1,86 +1,92 @@
-# CampusWorkflow ERP — Frontend React
+# CampusWorkflow — Frontend
 
-Frontend React pour **CampusWorkflow**, un ERP scolaire unifié
+Interface web de **CampusWorkflow**, l'ERP universitaire unifié. Construite avec React 18, Vite et React Router 7.
+Elle passe par la **gateway** (`/api`) pour parler aux microservices existants, sans aucune modification du backend.
 
-## 🚀 Démarrage rapide (dev)
+## Démarrage
 
 ```bash
-# Se placer dans le bon dossier 
-cd frontend
-
-# Installer les dépendances
+cd CampusWorkFlow/frontend
 npm install
-
-# Lancer le serveur de développement (Vite)
-npm run dev
+npm run dev        # http://localhost:5173 ; /api est proxifié vers BACKEND_URL (défaut http://localhost:3000)
+npm run build      # build de production dans dist/
+npm run lint       # ESLint (flat config : eslint.config.js)
 ```
 
-Ouvrez http://localhost:5173.
+Avec Docker Compose, rien ne change : `docker compose up --build frontend`.
+- L'image est construite avec `VITE_API_URL` (défaut `/api`).
+- nginx relaie `/api` vers `BACKEND_UPSTREAM` (la gateway).
 
-L'application ouvre le tableau de bord après connexion. `/splash` redirige vers
-l'onboarding lors de la première visite, puis vers la connexion. Vous pouvez aussi
-accéder directement à :
-- `/login` — écran de connexion asymétrique
-- `/onboarding` — séquence d'onboarding
-- `/` — Academic Dashboard (une fois connecté)
+| Variable | Rôle | Défaut |
+| --- | --- | --- |
+| `VITE_API_URL` | URL de base de l'API (gateway), intégrée au build | `/api` |
+| `VITE_BACKEND_URL` | Alternative à `VITE_API_URL` (compatibilité) | — |
+| `BACKEND_URL` | Cible du proxy Vite en développement | `http://localhost:3000` |
+| `BACKEND_UPSTREAM` | Cible du proxy nginx dans le conteneur | `http://gateway:3000` |
 
-> En développement, Vite proxy `/api` vers `http://localhost:3000`
-> (modifiable avec `BACKEND_URL`).
-
-## 🐳 Build & Docker
-
-Le frontend est **dockerisé** 
-
-```bash
-# Construire et lancer (frontend sur :5174)
-docker compose up --build
-```
-
-- Frontend : http://localhost:5174
-
-
-## 🔌 Structure du code
+## Architecture
 
 ```
 src/
-  main.jsx            # Point d'entrée React
-  App.jsx             # Routage
-  app/access.js       # Destinations, accès par rôle et navigation
-  api/client.js       # Client HTTP Axios et gestion des erreurs d'auth
-  components/         # Composants UI réutilisables
-    Layout.jsx        # Shell : topbar, sidebar (desktop), bottom tabs (mobile)
-    FoxMascot.jsx     # Mascotte renard (SVG)
-    Badge, Breadcrumbs, StatCard, Skeleton, EmptyState,
-    Modal, Toast, Accordion, Tooltip
-  pages/              # Pages
-    Splash, Login, Onboarding,
-    Dashboard, Students, Courses, Calendar,
-    Finance, HR, Messages, Analytics, Settings
-  styles/index.css    # Thème (orange renard) + styles
+├── api/          Client HTTP (axios) + un module par service
+│                 (auth, academic, finance/marketing, hr, messages, notifications, system)
+├── app/          App.jsx (providers + routes) et roles.js (rôles, droits d'accès, navigation)
+├── components/
+│   ├── ui/       Kit d'interface réutilisable : Button, Card, StatCard, DataTable, Modal,
+│   │             Form, Badge, Tabs, States (loader / vide / erreur)…
+│   ├── brand/    Logo CampusWorkflow
+│   └── routing/  Gardes de routes : RequireAuth, RequireRole, PublicOnly
+├── context/      AuthProvider (session JWT), ToastProvider, NotificationsProvider
+├── hooks/        useAuth, useToast, useNotifications, useApi / useApiAll / useMutation
+├── layouts/      AppLayout (sidebar + topbar), AuthLayout
+├── features/     Un dossier par domaine métier : auth, dashboard, academic, student,
+│                 teacher, hr, finance, marketing, messages, notifications, calendar,
+│                 assistant, settings, errors
+├── styles/       theme.css (tokens), base, layout, components, features
+└── utils/        Formatage (dates, FCFA…) et libellés des statuts métier
 ```
 
-## 🔑 Connexion au backend
+### Principes
+- **Client API unique** (`api/http.js`) :
+  - ajoute l'en-tête `Authorization` (jeton JWT) à chaque requête ;
+  - sur une réponse 401, rafraîchit le jeton une seule fois, même si plusieurs requêtes échouent en même temps ;
+  - si le rafraîchissement échoue, émet l'événement `cw:unauthorized`, qui déconnecte l'utilisateur ;
+  - convertit les erreurs en `ApiError`, avec des messages en français et les erreurs 422 de FastAPI mises à plat.
+- **Droits d'accès centralisés** (`app/roles.js`) :
+  - `ROUTE_ACCESS` liste les rôles autorisés pour chaque route ;
+  - la même table sert au routeur (`RequireRole`) et à la navigation latérale.
+- **Dégradation propre** :
+  - `useApiAll` charge plusieurs sources en parallèle ; si un service tombe, seul le bloc concerné affiche une erreur avec un bouton « Réessayer » ;
+  - une donnée absente (par exemple un profil étudiant ou enseignant non rattaché) affiche un message explicite, pas un écran vide.
+- **Chargement à la demande** : les pages métier sont chargées en lazy loading.
+- **Anciennes URL** : elles sont redirigées vers les nouvelles routes (`LEGACY_REDIRECTS`).
 
-Le client API centralisé est dans `src/api/client.js`. Pour brancher le backend :
+## Espaces par rôle
 
-```javascript
-// Exemple dans un composant
-import { api } from "../api/client";
+| Rôle | Écrans |
+| --- | --- |
+| `student` | Tableau de bord, inscriptions aux cours, relevé de notes, factures |
+| `professeur` | Tableau de bord, appel & saisie des notes, catalogue des cours, étudiants |
+| `academic` | Vue d'ensemble (KPI + santé des services), étudiants, cours & modules, personnel, congés, comptes, facturation, prospects, campagnes |
+| `rh` | Tableau de bord RH, personnel & paie, congés, comptes utilisateurs |
+| `finance` | Tableau de bord financier, factures & paiements Mobile Money |
+| `marketing` | Tableau de bord marketing, prospects (CRM), campagnes |
+| Tous | Calendrier, messagerie, notifications, assistant, paramètres (mot de passe) |
 
-const students = await api.get("/students");
-await api.post("/courses", { title: "CS101" });
-```
+## Correspondance avec la gateway
 
-- Le token JWT est stocké dans `localStorage` (`cw_token`) et injecté
-  automatiquement dans les en-têtes `Authorization`.
-- Une réponse `401` renouvelle le jeton via le client API ; si le renouvellement
-  échoue, l'événement `cw:unauthorized` ferme la session.
+| Préfixe frontend | Service |
+| --- | --- |
+| `/api/auth/*` | auth-service (login, register, refresh, me, directory, users, password) |
+| `/api/academic/*` | academic-service (catalogue, étudiants, enseignants, notes, présences, analytics, events) |
+| `/api/finance/*`, `/api/marketing/*` | finance-service (factures, paiements MoMo, leads, campagnes) |
+| `/api/hr/*` | hr-service (employés, congés, paie) |
+| `/api/messages/*` | message-service (conversations, messages) |
+| `/api/notifications/*` | notification-service (lecture, archivage, compteur non lus) |
+| `ws /api/ws/notifications?token=…` | notification-service — push temps réel des nouvelles notifications (badge, toast, liste) |
+| `ws /api/ws/messages/{conversation}?token=…` | message-service — push temps réel des nouveaux messages (participants uniquement) |
+| `/api/services/health`, `/api/chatbot/message` | gateway |
 
-## 🧪 Scripts
+**Temps réel** : `hooks/useRealtime.js` ouvre les WebSockets (reconnexion automatique, ping 25 s). La gateway vérifie le JWT passé en `?token=` et relaie l'upgrade ; nginx (Docker) et Vite (dev) transmettent les en-têtes `Upgrade`. Un polling lent reste actif en secours. Un message envoyé publie un événement RabbitMQ que le notification-service transforme en notification poussée au destinataire.
 
-| Commande | Description |
-|----------|-------------|
-| `npm run dev` | Serveur de dev Vite |
-| `npm run build` | Build de production dans `dist/` |
-| `npm run preview` | Prévisualiser le build |
-| `docker compose up --build` | Lancer via Docker |
+> **Astuce données vides :** si les écrans affichent « Aucune donnée », vérifiez d'abord que les bases ont été initialisées (définissez `DB_AUTO_SEED=true` dans `.env` avant `docker compose up` ; la valeur par défaut est `false`). Vérifiez aussi que le compte connecté est bien rattaché à un dossier académique (étudiant ou enseignant) portant le même email.

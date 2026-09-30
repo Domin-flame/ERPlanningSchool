@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.auth import get_current_user
 from app.database import get_db
+from app.realtime import broadcast_to_user, notification_event
 
 router = APIRouter(prefix="/api/v1/notifications", tags=["Notifications"])
 
@@ -49,6 +50,7 @@ def unread_count(db: Session = Depends(get_db), user=Depends(get_current_user)):
 @router.post("/", response_model=schemas.NotificationOut, status_code=201)
 def create_notification(
     payload: schemas.NotificationCreate,
+    background_tasks: BackgroundTasks,
     db:      Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -56,6 +58,7 @@ def create_notification(
     db.add(notif)
     db.commit()
     db.refresh(notif)
+    background_tasks.add_task(broadcast_to_user, notif.user_id, notification_event(notif))
     return notif
 
 

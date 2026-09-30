@@ -1,1 +1,0 @@
-// cette classe permet de gérer le dashboard du module d'admission, il comprend notamment un lien vers le formulaire de créations des étudiants, des métriques pour calculer le nombre d'étudiant etc 
