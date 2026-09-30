@@ -1,0 +1,58 @@
+/* Design tokens CampusWorkflow */
+:root {
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --brand-50: #fff7ed;
+  --brand-100: #ffedd5;
+  --brand-200: #fed7aa;
+  --brand-500: #f97316;
+  --brand-600: #ea580c;
+  --brand-700: #c2410c;
+
+  --navy-950: #0b1220;
+  --navy-900: #0f1b2d;
+  --navy-800: #16263d;
+  --navy-700: #22354f;
+  --navy-500: #5b6b82;
+
+  --gray-0: #ffffff;
+  --gray-25: #fbfcfd;
+  --gray-50: #f6f8fa;
+  --gray-100: #eef1f5;
+  --gray-200: #e2e7ee;
+  --gray-300: #cbd3de;
+  --gray-400: #98a3b3;
+  --gray-500: #6b7686;
+  --gray-600: #4b5563;
+  --gray-700: #334155;
+  --gray-900: #111827;
+
+  --blue-50: #eff6ff;  --blue-600: #2563eb;
+  --green-50: #ecfdf5; --green-600: #059669; --green-700: #047857;
+  --amber-50: #fffbeb; --amber-600: #d97706;
+  --red-50: #fef2f2;   --red-600: #dc2626;  --red-700: #b91c1c;
+  --violet-50: #f5f3ff; --violet-600: #7c3aed;
+  --teal-50: #f0fdfa;  --teal-600: #0d9488;
+
+  --bg: var(--gray-50);
+  --surface: var(--gray-0);
+  --surface-muted: var(--gray-25);
+  --border: var(--gray-200);
+  --border-strong: var(--gray-300);
+  --text: var(--gray-900);
+  --text-muted: var(--gray-500);
+  --text-soft: var(--gray-600);
+  --primary: var(--brand-600);
+  --primary-hover: var(--brand-700);
+  --focus-ring: 0 0 0 3px rgb(234 88 12 / 0.25);
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --shadow-xs: 0 1px 2px rgb(15 27 45 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(15 27 45 / 0.08), 0 1px 2px rgb(15 27 45 / 0.04);
+  --shadow-lg: 0 20px 45px -12px rgb(15 27 45 / 0.25);
+
+  --sidebar-width: 260px;
+  --topbar-height: 64px;
+}
