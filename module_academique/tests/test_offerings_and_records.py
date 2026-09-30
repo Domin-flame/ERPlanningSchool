@@ -99,6 +99,11 @@ def test_course_offering_creation(client, full_context):
 
 
 def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
+    teacher_headers = {
+        "X-User-Role": "teacher",
+        "X-User-Email": "prof.martin@example.com",
+    }
+
     offering = client.post(
         "/course-offerings/",
         json={
@@ -147,6 +152,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "max_score": "20.00",
             "course_offering_id": offering["course_offering_id"],
         },
+        headers=teacher_headers,
     )
     assert exam.status_code == 201
     exam = exam.json()
@@ -187,6 +193,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "exam_id": exam["exam_id"],
             "enrollment_id": enrollment["enrollment_id"],
         },
+        headers=teacher_headers,
     )
     assert grade.status_code == 201
     assert grade.json()["score"] == "15.50"
@@ -200,6 +207,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "topic_covered": "Introduction au SQL",
             "schedule_id": schedule["schedule_id"],
         },
+        headers=teacher_headers,
     )
     assert session.status_code == 201
     session = session.json()
@@ -212,6 +220,7 @@ def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
             "session_id": session["session_id"],
             "enrollment_id": enrollment["enrollment_id"],
         },
+        headers=teacher_headers,
     )
     assert attendance.status_code == 201
     assert attendance.json()["status"] == "Present"
