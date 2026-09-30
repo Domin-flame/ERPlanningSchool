@@ -102,6 +102,69 @@ describe('RBAC centralisé (rbacGuard)', () => {
   });
 });
 
+describe('Inscriptions étudiantes (/api/academic/enrollments)', () => {
+  const auth = (role) => `Bearer ${token(role)}`;
+
+  it("autorise un 'student' à créer une inscription (backend absent -> pas de 403)", async () => {
+    const res = await request(app)
+      .post('/api/academic/enrollments/')
+      .set('Authorization', auth('student'))
+      .send({ student_id: 1, course_offering_id: 1 });
+    expect(res.status).not.toBe(403);
+  });
+
+  it("bloque un 'student' qui tente de supprimer une inscription", async () => {
+    const res = await request(app)
+      .delete('/api/academic/enrollments/1')
+      .set('Authorization', auth('student'));
+    expect(res.status).toBe(403);
+  });
+
+  it("bloque 'marketing' sur la création d'inscription", async () => {
+    const res = await request(app)
+      .post('/api/academic/enrollments/')
+      .set('Authorization', auth('marketing'))
+      .send({ student_id: 1, course_offering_id: 1 });
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('Chatbot (/api/chatbot, /api/ai)', () => {
+  const auth = (role) => `Bearer ${token(role)}`;
+
+  it('refuse /api/chatbot/message sans token', async () => {
+    const res = await request(app).post('/api/chatbot/message').send({ message: 'Bonjour' });
+    expect(res.status).toBe(401);
+  });
+
+  it('proxifie /api/chatbot/message pour un utilisateur connecté (backend absent -> 503)', async () => {
+    const res = await request(app)
+      .post('/api/chatbot/message')
+      .set('Authorization', auth('student'))
+      .send({ message: 'Bonjour' });
+    expect([503, 502]).toContain(res.status);
+  });
+
+  it('proxifie un POST /api/ai/chats avec un corps vide "{}" sans bloquer', async () => {
+    const res = await request(app)
+      .post('/api/ai/chats')
+      .set('Authorization', auth('student'))
+      .send({});
+    expect([503, 502]).toContain(res.status);
+  });
+});
+
+describe('Rate limiting global', () => {
+  it("ne bloque pas une navigation normale (plusieurs dizaines d'appels API)", async () => {
+    const statuses = [];
+    for (let i = 0; i < 150; i += 1) {
+      const res = await request(app).get('/api/route-inexistante');
+      statuses.push(res.status);
+    }
+    expect(statuses).not.toContain(429);
+  });
+});
+
 describe('Rate limiting (démo)', () => {
   it('bloque après 5 requêtes en 60s sur /api/demo/ratelimit', async () => {
     for (let i = 0; i < 5; i += 1) {
@@ -117,5 +180,37 @@ describe('Routes inconnues', () => {
   it('renvoie 404 sur une route qui ne correspond à rien', async () => {
     const res = await request(app).get('/api/route-qui-n-existe-pas');
     expect(res.status).toBe(404);
+  });
+});
+
+describe('Rate limiting authentification', () => {
+  it('compte les tentatives en échec et finit par bloquer (anti brute force)', async () => {
+    const statuses = [];
+    for (let i = 0; i < 12; i += 1) {
+      const res = await request(app).post('/api/auth/login').send({ email: 'x@y.z', password: 'bad' });
+      statuses.push(res.status);
+    }
+    // Backend auth absent → réponses en échec (5xx) comptabilisées → 429.
+    expect(statuses).toContain(429);
+  });
+});
+
+describe('Messagerie (messageConversationGuard)', () => {
+  const auth = (role) => `Bearer ${token(role)}`;
+
+  it('exige des destinataires pour créer une conversation', async () => {
+    const res = await request(app)
+      .post('/api/messages/conversations/')
+      .set('Authorization', auth('student'))
+      .send({ name: 'Test' });
+    expect(res.status).toBe(400);
+  });
+
+  it("n'exige pas de destinataires pour envoyer un message dans une conversation", async () => {
+    const res = await request(app)
+      .post('/api/messages/messages/')
+      .set('Authorization', auth('student'))
+      .send({ conversation_id: 'abc', content: 'Bonjour' });
+    expect(res.status).not.toBe(400);
   });
 });

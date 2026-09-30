@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
-import api from "../api/client.js";
+import api, {
+  REFRESH_TOKEN_KEY,
+  TOKEN_KEY,
+  USER_KEY,
+  clearStoredSession,
+  refreshAccessToken,
+} from "../api/client.js";
 
 const AuthContext = createContext();
 
 // Durée avant expiration à partir de laquelle on tente le refresh (en ms).
 // On rafraîchit 2 minutes avant l'expiration réelle du token.
 const REFRESH_MARGIN_MS = 2 * 60 * 1000;
+const MAX_TIMER_DELAY_MS = 2 ** 31 - 1;
 
 /**
  * Décode le payload d'un JWT sans vérification de signature (côté client).
@@ -29,13 +36,13 @@ function msUntilExpiry(token) {
   return payload.exp * 1000 - Date.now();
 }
 
-function validatePassword(password) {
+export function validatePassword(password) {
   const rules = [
-    { valid: password.length >= 8, message: "au moins 8 caractÃ¨res" },
+    { valid: password.length >= 8, message: "au moins 8 caractères" },
     { valid: /[A-Z]/.test(password), message: "une majuscule" },
     { valid: /[a-z]/.test(password), message: "une minuscule" },
     { valid: /\d/.test(password), message: "un chiffre" },
-    { valid: /[/*@#._!$%^&+=-]/.test(password), message: "un caractÃ¨re spÃ©cial" },
+    { valid: /[^A-Za-z0-9]/.test(password), message: "un caractère spécial" },
   ];
   const missing = rules.filter((rule) => !rule.valid).map((rule) => rule.message);
   return {
@@ -48,126 +55,151 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true); // true au démarrage = vérification du token stocké
   const refreshTimerRef = useRef(null);
+  const performRefreshRef = useRef(null);
+
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
 
   // ----- Helpers de persistance -----
   const persistSession = useCallback((userData, accessToken, refreshToken) => {
-    localStorage.setItem("cw_user", JSON.stringify(userData));
-    localStorage.setItem("cw_token", accessToken);
-    if (refreshToken) localStorage.setItem("cw_refresh_token", refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    localStorage.setItem(TOKEN_KEY, accessToken);
+    if (refreshToken) localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    else localStorage.removeItem(REFRESH_TOKEN_KEY);
     setUser(userData);
   }, []);
 
   const clearSession = useCallback(() => {
-    localStorage.removeItem("cw_user");
-    localStorage.removeItem("cw_token");
-    localStorage.removeItem("cw_refresh_token");
+    clearStoredSession();
+    clearRefreshTimer();
     setUser(null);
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-  }, []);
+  }, [clearRefreshTimer]);
 
   // ----- Refresh silencieux du token -----
+  // Programme un refresh REFRESH_MARGIN_MS avant l'expiration du token.
   const scheduleRefresh = useCallback((accessToken) => {
-    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
-
-    const delay = msUntilExpiry(accessToken) - REFRESH_MARGIN_MS;
-    if (delay <= 0) {
-      // Token déjà expiré ou expire dans moins de REFRESH_MARGIN_MS → refresh immédiat
-      performRefresh();
-      return;
-    }
-
-    refreshTimerRef.current = setTimeout(performRefresh, delay);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    clearRefreshTimer();
+    const delay = Math.max(msUntilExpiry(accessToken) - REFRESH_MARGIN_MS, 0);
+    // setTimeout est limité à ~24,8 jours (entier signé 32 bits).
+    refreshTimerRef.current = setTimeout(
+      () => performRefreshRef.current?.(),
+      Math.min(delay, MAX_TIMER_DELAY_MS)
+    );
+  }, [clearRefreshTimer]);
 
   const performRefresh = useCallback(async () => {
-    const refreshToken = localStorage.getItem("cw_refresh_token");
-    if (!refreshToken) {
-      clearSession();
-      return;
-    }
-
     try {
-      const res = await api.post("/auth/refresh", { refresh_token: refreshToken });
-      const { access_token, refresh_token: newRefresh } = res.data;
-
-      localStorage.setItem("cw_token", access_token);
-      if (newRefresh) localStorage.setItem("cw_refresh_token", newRefresh);
-
-      scheduleRefresh(access_token);
+      // refreshAccessToken() mutualise la requête avec l'intercepteur 401
+      // de client.js et émet "cw:token-refreshed" qui reprogramme le timer.
+      await refreshAccessToken();
+      return true;
     } catch {
       // Refresh échoué → déconnexion propre
       clearSession();
       window.dispatchEvent(new CustomEvent("cw:session-expired"));
+      return false;
     }
-  }, [clearSession, scheduleRefresh]);
+  }, [clearSession]);
+
+  useEffect(() => {
+    performRefreshRef.current = performRefresh;
+  }, [performRefresh]);
 
   // ----- Initialisation : restaurer la session depuis localStorage -----
   useEffect(() => {
+    let cancelled = false;
+
     const restoreSession = async () => {
-      const storedToken = localStorage.getItem("cw_token");
-      const storedUser = localStorage.getItem("cw_user");
+      const storedToken = localStorage.getItem(TOKEN_KEY);
+      const storedUser = localStorage.getItem(USER_KEY);
 
       if (!storedToken || !storedUser) {
+        clearSession();
         setLoading(false);
         return;
       }
 
-      const remaining = msUntilExpiry(storedToken);
-
-      if (remaining > REFRESH_MARGIN_MS) {
-        // Token encore valide — restaurer directement
-        try {
-          setUser(JSON.parse(storedUser));
-          scheduleRefresh(storedToken);
-        } catch {
-          clearSession();
+      let storedUserData;
+      try {
+        storedUserData = JSON.parse(storedUser);
+        if (!storedUserData || typeof storedUserData !== "object") {
+          throw new Error("Utilisateur stocké invalide");
         }
+      } catch {
+        clearSession();
+        setLoading(false);
+        return;
+      }
+
+      if (msUntilExpiry(storedToken) > REFRESH_MARGIN_MS) {
+        // Token encore valide — restaurer directement
+        setUser(storedUserData);
+        scheduleRefresh(storedToken);
         setLoading(false);
         return;
       }
 
       // Token expiré ou sur le point d'expirer → tenter le refresh
-      const refreshToken = localStorage.getItem("cw_refresh_token");
-      if (!refreshToken) {
-        clearSession();
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await api.post("/auth/refresh", { refresh_token: refreshToken });
-        const { access_token, refresh_token: newRefresh } = res.data;
-        localStorage.setItem("cw_token", access_token);
-        if (newRefresh) localStorage.setItem("cw_refresh_token", newRefresh);
-        setUser(JSON.parse(storedUser));
-        scheduleRefresh(access_token);
-      } catch {
-        clearSession();
-      }
-      setLoading(false);
+      const refreshed = await performRefresh();
+      if (!cancelled && refreshed) setUser(storedUserData);
+      if (!cancelled) setLoading(false);
     };
 
     restoreSession();
 
-    // Écouter l'événement 401 émis par client.js
+    // Nouveau token obtenu (timer, intercepteur 401 ou autre onglet)
+    const handleTokenRefreshed = (event) => {
+      const token = event.detail?.accessToken || localStorage.getItem(TOKEN_KEY);
+      if (token) scheduleRefresh(token);
+    };
+    // Refresh impossible depuis client.js → session terminée
     const handleUnauthorized = () => clearSession();
+    // Synchronisation multi-onglets (connexion, déconnexion, rotation du token)
+    const handleStorage = (event) => {
+      if (event.key === TOKEN_KEY) {
+        if (event.newValue) scheduleRefresh(event.newValue);
+        else clearSession();
+      } else if (event.key === USER_KEY) {
+        if (!event.newValue) {
+          clearSession();
+          return;
+        }
+        try {
+          setUser(JSON.parse(event.newValue));
+        } catch {
+          clearSession();
+        }
+      } else if (event.key === null) {
+        // localStorage.clear() dans un autre onglet
+        clearSession();
+      }
+    };
+
+    window.addEventListener("cw:token-refreshed", handleTokenRefreshed);
     window.addEventListener("cw:unauthorized", handleUnauthorized);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
+      cancelled = true;
+      window.removeEventListener("cw:token-refreshed", handleTokenRefreshed);
       window.removeEventListener("cw:unauthorized", handleUnauthorized);
-      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+      window.removeEventListener("storage", handleStorage);
+      clearRefreshTimer();
     };
-  }, [clearSession, scheduleRefresh]);
+  }, [clearSession, clearRefreshTimer, performRefresh, scheduleRefresh]);
 
   // ----- Login -----
   const login = async (email, password) => {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password });
-      const { access_token, refresh_token, user: userData } = res.data;
+      const { access_token, refresh_token, user: userData } = res.data || {};
 
       if (!access_token || !userData) {
-        setLoading(false);
         return { success: false, message: "Réponse invalide du serveur" };
       }
 
@@ -195,24 +227,25 @@ export function AuthProvider({ children }) {
       const { full_name, email, password, role } = formData;
 
       // Validation côté client
-      if (!full_name || !email || !password || !role) {
+      if (!full_name?.trim() || !email?.trim() || !password || !role) {
         return { success: false, message: "Tous les champs sont requis" };
       }
-      // ajouter des contraintes tels que :
-      /* le mot de passe doit contenir au moins une majuscule
-      le mot de passe doit contenir au moins une minuscule 
-      le mot de passe doit contenir au moins un signe : /*-@#
-      le mot de passe doit contenir un chiffre 
-      */ 
-      if (password.length < 8) {
-        return { success: false, message: "Le mot de passe doit contenir au moins 8 caractères" };
+      // Complexité : 8 caractères min., majuscule, minuscule, chiffre et caractère spécial
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        return { success: false, message: passwordCheck.message };
       }
 
       // Inscription sur le backend (payload aligné avec UserCreate du service auth)
-      await api.post("/auth/register", { full_name, email, password, role });
+      await api.post("/auth/register", {
+        full_name: full_name.trim(),
+        email: email.trim(),
+        password,
+        role,
+      });
 
       // Connexion automatique après inscription réussie
-      const loginResult = await login(email, password);
+      const loginResult = await login(email.trim(), password);
       if (loginResult.success) {
         return { success: true, user: loginResult.user };
       }
@@ -231,8 +264,10 @@ export function AuthProvider({ children }) {
 
   // ----- Logout -----
   const logout = useCallback(async () => {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
     try {
-      await api.post("/auth/logout");
+      // Révoque aussi le refresh token côté serveur s'il est présent
+      await api.post("/auth/logout", refreshToken ? { refresh_token: refreshToken } : undefined);
     } catch {
       // Ignore — on déconnecte côté client dans tous les cas
     }
@@ -263,4 +298,3 @@ export function useAuth() {
   return context;
 }
 
-// est ce que l'auth context est complet coompte tenu des modifications qu'il ya à faire au niveau du module d'authentification ? 

@@ -3,45 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import AppLogo from "../../components/AppLogo.jsx";
 import Toast from "../../components/Toast.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
-
-function getRouteForRole(role) {
-  const routes = {
-    academic: "/academic",
-    professeur: "/professeur",
-    student: "/student",
-    rh: "/hr",
-    finance: "/finance",
-    marketing: "/marketing",
-  };
-
-  return routes[role] || "/";
-}
-
-function getRoleShortName(role) {
-  const names = {
-    student: "Étudiant",
-    professeur: "Enseignant",
-    rh: "Responsable RH",
-    finance: "Responsable Financier",
-    marketing: "Responsable Marketing",
-    academic: "Directeur",
-  };
-
-  return names[role] || role;
-}
-
-function getRoleLabel(role) {
-  const labels = {
-    academic: "Direction Académique",
-    professeur: "Professeur",
-    student: "Étudiant",
-    rh: "Responsable RH",
-    finance: "Responsable Financier",
-    marketing: "Responsable Marketing",
-  };
-
-  return labels[role] || role;
-}
+import { getRoleHome, getRoleLabel, getRoleShortName } from "../../app/access.js";
 
 const roles = [
   {
@@ -103,7 +65,7 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const from = location.state?.from?.pathname || getRouteForRole(user.role);
+      const from = location.state?.from?.pathname || getRoleHome(user.role);
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, user, navigate, location]);
@@ -157,7 +119,7 @@ export default function Login() {
       setToastShow(true);
 
       setTimeout(() => {
-        navigate(getRouteForRole(res.user.role), { replace: true });
+        navigate(getRoleHome(res.user.role), { replace: true });
       }, 700);
     } else {
       setErrorMsg(res.message || "Connexion échouée.");
@@ -190,7 +152,7 @@ export default function Login() {
         setToastShow(true);
 
         setTimeout(() => {
-          navigate(getRouteForRole(res.user.role), { replace: true });
+          navigate(getRoleHome(res.user.role), { replace: true });
         }, 700);
       } else {
         setMode("login");

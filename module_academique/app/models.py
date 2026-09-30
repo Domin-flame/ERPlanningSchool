@@ -193,6 +193,18 @@ class Student(Base):
         "Enrollment", back_populates="student", cascade="all, delete-orphan"
     )
 
+    @property
+    def name(self):
+        return self.user.name if self.user else None
+
+    @property
+    def email(self):
+        return self.user.email if self.user else None
+
+    @property
+    def program_name(self):
+        return self.program.name if self.program else None
+
 
 # ---------------------------------------------------------------------------
 # Infrastructure

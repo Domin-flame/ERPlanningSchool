@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
 import api from "../../api/client.js";
 
@@ -112,9 +113,12 @@ export default function Assistant() {
           <h2>Assistant IA CampusWorkflow</h2>
           <p className="muted">Posez vos questions sur les modules métiers, la navigation ou vos prochaines actions.</p>
         </div>
-        <button className="btn" type="button" onClick={onReset} disabled={loading || sending || !conversationId}>
-          Nouvelle conversation
-        </button>
+        <div className="actions">
+          <Link className="btn" to="/chatbot">Questions rapides (Assistant Campus)</Link>
+          <button className="btn" type="button" onClick={onReset} disabled={loading || sending || !conversationId}>
+            Nouvelle conversation
+          </button>
+        </div>
       </div>
 
       {(error || loading) && (

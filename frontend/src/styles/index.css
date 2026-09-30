@@ -107,6 +107,11 @@ a:hover {
   top: 0;
 
   height: 100vh;
+
+  /* Menus longs (profil académique) : sans défilement, les derniers liens
+     (Analytics, Paramètres) sortaient de l'écran et étaient inaccessibles. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .brand {
@@ -250,7 +255,21 @@ a:hover {
 }
 
 .topbar {
-  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  min-height: 68px;
+  padding: 0 28px;
+
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+
+  border-bottom: 1px solid var(--line);
 }
 
 .hamburger {
@@ -4261,5 +4280,167 @@ label textarea {
 
   .role-selector-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   EMPLOYEE TABLE (RH)
+   ========================================================================== */
+
+.employee-table-wrapper {
+  overflow-x: auto;
+}
+
+.employee-actions-heading {
+  text-align: right;
+}
+
+.employee-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+
+/* ==========================================================================
+   ASSISTANT CAMPUS (/chatbot)
+   ========================================================================== */
+
+.campus-chatbot {
+  display: flex;
+  flex-direction: column;
+  min-height: min(68vh, 720px);
+  overflow: hidden;
+}
+
+.campus-chatbot-notice {
+  padding: 12px 18px;
+  color: var(--muted);
+  background: var(--panel-soft);
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.campus-chatbot-messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding: 22px;
+}
+
+.campus-chatbot-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: min(720px, 92%);
+}
+
+.campus-chatbot-message.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.campus-chatbot-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+}
+
+.campus-chatbot-message p {
+  margin: 0;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px 14px 14px;
+  background: var(--panel);
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.campus-chatbot-message.user p {
+  border-color: var(--brand);
+  border-radius: 14px 4px 14px 14px;
+  color: #fff;
+  background: var(--brand);
+}
+
+.campus-chatbot-loading,
+.campus-chatbot-error {
+  margin: 0 0 0 44px;
+}
+
+.campus-chatbot-error {
+  padding: 0 22px;
+  color: var(--danger);
+}
+
+.campus-chatbot-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 22px 16px;
+}
+
+.campus-chatbot-suggestions .btn {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.campus-chatbot-composer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--line);
+}
+
+.campus-chatbot-composer .field {
+  flex: 1;
+}
+
+.campus-chatbot-composer .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 600px) {
+  .campus-chatbot-messages {
+    padding: 16px 12px;
+  }
+
+  .campus-chatbot-suggestions {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .campus-chatbot-composer {
+    padding: 12px;
+  }
+
+  .campus-chatbot-composer .btn {
+    width: 42px;
+    overflow: hidden;
+    gap: 20px;
+    white-space: nowrap;
   }
 }

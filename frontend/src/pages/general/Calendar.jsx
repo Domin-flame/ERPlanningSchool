@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
 import Badge from "../../components/Badge.jsx";
+import api from "../../api/client.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useData } from "../../context/DataContext.jsx";
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
+const NOTES_KEY_PREFIX = "cw_calendar_notes_";
 
 function toISODate(year, month, day) {
   const mm = String(month + 1).padStart(2, "0");
@@ -57,73 +59,59 @@ function normalizeEvent(item, fallbackModule = "academic") {
   };
 }
 
-async function fetchMonthEvents(year, month, token, userRole = "") {
+function notesStorageKey(user) {
+  return `${NOTES_KEY_PREFIX}${user?.email || user?.id || "anonymous"}`;
+}
+
+// Aucun service ne stocke les notes personnelles : elles sont conservées
+// localement (par utilisateur) dans le navigateur.
+export function loadPersonalNotes(user) {
+  try {
+    const items = JSON.parse(localStorage.getItem(notesStorageKey(user)) || "[]");
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePersonalNotes(user, notes) {
+  localStorage.setItem(notesStorageKey(user), JSON.stringify(notes));
+}
+
+export async function fetchMonthEvents(year, month, { user, invoices = [] } = {}) {
   const monthParam = `${year}-${String(month + 1).padStart(2, "0")}`;
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  const role = (userRole || "").toLowerCase();
+  const items = [];
 
-  const requests = [
-    fetch(`${API_BASE_URL}/personal/events?month=${monthParam}`, { headers })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((items) => (Array.isArray(items) ? items : []))
-      .catch(() => []),
-    fetch(`${API_BASE_URL}/academic/events?month=${monthParam}`, { headers })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((items) => (Array.isArray(items) ? items : []))
-      .catch(() => []),
-  ];
-
-  const wantsFinance =
-    role.includes("student") ||
-    role.includes("etudiant") ||
-    role.includes("finance") ||
-    role.includes("financier") ||
-    role.includes("admin") ||
-    role.includes("direction") ||
-    role.includes("academic");
-
-  const wantsHr =
-    role.includes("employee") ||
-    role.includes("employe") ||
-    role.includes("teacher") ||
-    role.includes("enseignant") ||
-    role.includes("staff") ||
-    role.includes("rh") ||
-    role.includes("finance") ||
-    role.includes("admin") ||
-    role.includes("direction") ||
-    role.includes("academic");
-
-  if (wantsFinance) {
-    requests.push(
-      fetch(`${API_BASE_URL}/finance/events?month=${monthParam}`, { headers })
-        .then((res) => (res.ok ? res.json() : []))
-        .then((items) => (Array.isArray(items) ? items : []))
-        .catch(() => [])
-    );
+  // Examens et séances de cours (academic-service, via le gateway).
+  try {
+    const res = await api.get("/academic/events", { params: { month: monthParam } });
+    if (Array.isArray(res.data)) items.push(...res.data.map((item) => ({ ...item, module: "academic" })));
+  } catch {
+    // Rôle sans accès au module académique ou service indisponible : on continue.
   }
 
-  if (wantsHr) {
-    requests.push(
-      fetch(`${API_BASE_URL}/hr/events?month=${monthParam}`, { headers })
-        .then((res) => (res.ok ? res.json() : []))
-        .then((items) => (Array.isArray(items) ? items : []))
-        .catch(() => [])
-    );
-  }
+  // Échéances de factures déjà chargées par DataContext (finance / étudiant / direction).
+  invoices.forEach((invoice) => {
+    const due = invoice.date_echeance || invoice.dueDate || invoice.due_date;
+    if (!due || !String(due).startsWith(monthParam)) return;
+    items.push({
+      id: `invoice-${invoice.id_invoice ?? invoice.id}`,
+      module: "finance",
+      event_date: String(due).slice(0, 10),
+      title: `Échéance facture ${invoice.numero_facture || invoice.id_invoice || ""}`.trim(),
+      status: invoice.statut === "PAYEE" ? "Payée" : "Overdue",
+    });
+  });
 
-  const results = await Promise.all(requests);
+  loadPersonalNotes(user)
+    .filter((note) => (note.event_date || "").startsWith(monthParam))
+    .forEach((note) => items.push({ ...note, module: "personal" }));
+
   const eventsByDate = {};
-
-  results.flat().forEach((item) => {
-    const module =
-      item.module ||
-      (item.type === "finance" ? "finance" : item.type === "hr" ? "hr" : item.type === "personal" ? "personal" : "academic");
-    const event = normalizeEvent({ ...item, module }, module);
+  items.forEach((item) => {
+    const event = normalizeEvent(item, item.module || "academic");
     const dateKey = event.dateIso;
-
     if (!dateKey) return;
-
     if (!eventsByDate[dateKey]) eventsByDate[dateKey] = [];
     eventsByDate[dateKey].push(event);
   });
@@ -132,7 +120,8 @@ async function fetchMonthEvents(year, month, token, userRole = "") {
 }
 
 export default function CalendarPage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  const { invoices } = useData();
   const [viewDate, setViewDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -166,7 +155,7 @@ export default function CalendarPage() {
     setLoading(true);
     setError(null);
 
-    fetchMonthEvents(year, month, token, user?.role || user?.user_type || "")
+    fetchMonthEvents(year, month, { user, invoices })
       .then((data) => {
         if (!cancelled) setEvents(data);
       })
@@ -180,7 +169,7 @@ export default function CalendarPage() {
     return () => {
       cancelled = true;
     };
-  }, [year, month, token, user]);
+  }, [year, month, user, invoices]);
 
   const eventsThisMonthList = useMemo(() => {
     const list = [];
@@ -228,33 +217,13 @@ export default function CalendarPage() {
     };
 
     try {
-      const response = await fetch(`${API_BASE_URL}/personal/events`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const saved = response.ok ? await response.json() : payload;
-      const normalized = normalizeEvent({ ...saved, module: "personal" }, "personal");
-
-      setEvents((prev) => {
-        const existing = prev[selectedDateISO] || [];
-        return {
-          ...prev,
-          [selectedDateISO]: [...existing, normalized],
-        };
-      });
-    } catch (err) {
-      setEvents((prev) => {
-        const item = normalizeEvent({ ...payload, id: `local-${Date.now()}` }, "personal");
-        return {
-          ...prev,
-          [selectedDateISO]: [...(prev[selectedDateISO] || []), item],
-        };
-      });
+      const note = { ...payload, id: `note-${Date.now()}` };
+      savePersonalNotes(user, [...loadPersonalNotes(user), note]);
+      const normalized = normalizeEvent(note, "personal");
+      setEvents((prev) => ({
+        ...prev,
+        [selectedDateISO]: [...(prev[selectedDateISO] || []), normalized],
+      }));
     } finally {
       setSavingNote(false);
       setModalOpen(false);

@@ -13,6 +13,7 @@ import Dashboard from "./pages/academic/Dashboard.jsx";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard.jsx";
 import StudentDashboard from "./pages/student/StudentDashboard.jsx";
 import Transcript from "./pages/student/Transcript.jsx";
+import StudentCourseCatalog from "./pages/student/StudentCourseCatalog.jsx";
 import MarketingDashboard from "./pages/finance/MarketingDashboard.jsx";
 import HR from "./pages/rh/HR.jsx";
 import Finance from "./pages/finance/Finance.jsx";
@@ -25,6 +26,7 @@ import Notification from "./pages/notification/Notification.jsx";
 import Analytics from "./pages/general/Analytics.jsx";
 import Settings from "./pages/auth/Settings.jsx";
 import Assistant from "./pages/ai/Assistant.jsx";
+import Chatbot from "./pages/ai/Chatbot.jsx";
 
 /**
  * Retourne le dashboard home pour le rôle connecté.
@@ -93,6 +95,15 @@ function MainRoutes() {
             </ProtectedRoute>
           }
         />
+        {/* Catalogue des offres du semestre et inscription — réservé aux étudiants */}
+        <Route
+          path="/student/courses"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentCourseCatalog />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/marketing"
           element={
@@ -138,7 +149,9 @@ function MainRoutes() {
         />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/messages" element={<Messages />} />
+        {/* Assistants IA (chatbot-service via le gateway) — tous les rôles connectés */}
         <Route path="/assistant" element={<Assistant />} />
+        <Route path="/chatbot" element={<Chatbot />} />
         <Route path="/notifications" element={<Notification />} />
         <Route
           path="/analytics"
@@ -159,11 +172,12 @@ function MainRoutes() {
 
 export default function App() {
   const [showSplash, setShowSplash] = React.useState(true);
+  const handleSplashComplete = React.useCallback(() => setShowSplash(false), []);
 
   return (
     <AuthProvider>
       <DataProvider>
-        {showSplash ? <Splash onComplete={() => setShowSplash(false)} /> : <MainRoutes />}
+        {showSplash ? <Splash onComplete={handleSplashComplete} /> : <MainRoutes />}
       </DataProvider>
     </AuthProvider>
   );

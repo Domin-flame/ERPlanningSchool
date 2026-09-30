@@ -275,6 +275,23 @@ class StudentUpdate(BaseModel):
 class StudentRead(StudentBase):
     model_config = ConfigDict(from_attributes=True)
     student_id: int
+    # Renseignés depuis l'utilisateur / le programme liés pour que l'UI
+    # affiche un nom lisible plutôt que des identifiants techniques.
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    program_name: Optional[str] = None
+
+
+class StudentRegister(BaseModel):
+    """Crée en une seule opération le profil utilisateur et le dossier étudiant."""
+
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    matricule: str
+    program_id: int
+    enrollment_date: date
+    status: str = "ACTIVE"
 
 
 # ---------------------------------------------------------------------------

@@ -5,17 +5,28 @@ import Badge from "../../components/Badge.jsx";
 import Toast from "../../components/Toast.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
+import Modal from "../../components/Modal.jsx";
+import StudentForm from "./StudentForm.jsx";
 import { useData } from "../../context/DataContext.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
+import { STUDENT_STATUSES } from "../../services/studentService.js";
 
 export default function Students() {
   const {
     students,
+    registerStudent,
+    updateStudentStatus,
     deleteStudent,
     loading,
     errors,
   } = useData();
 
+  const { user } = useAuth();
+  // Seul le profil académique peut inscrire / modifier des étudiants (RBAC gateway).
+  const canManage = user?.role === "academic";
+
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   const [toastShow, setToastShow] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
@@ -33,6 +44,7 @@ export default function Students() {
 
     return (
       name.toLowerCase().includes(term) ||
+      (student.email || "").toLowerCase().includes(term) ||
       (student.matricule || student.id || "")
         .toString()
         .toLowerCase()
@@ -119,6 +131,14 @@ export default function Students() {
             Suivi académique et gestion des dossiers étudiants.
           </p>
         </div>
+
+        {canManage && (
+          <div className="actions">
+            <button className="btn primary" onClick={() => setModalOpen(true)}>
+              + Ajouter un étudiant
+            </button>
+          </div>
+        )}
 
       </div>
 
@@ -210,6 +230,13 @@ export default function Students() {
             icon="🎓"
             title="Aucun étudiant"
             description="Aucun étudiant n'est actuellement disponible dans le module académique."
+            action={
+              canManage ? (
+                <button className="btn primary" onClick={() => setModalOpen(true)}>
+                  + Ajouter un étudiant
+                </button>
+              ) : null
+            }
           />
 
         ) : (
@@ -221,7 +248,7 @@ export default function Students() {
               <tr>
                 <th>Matricule</th>
                 <th>Étudiant</th>
-                <th>ID Utilisateur</th>
+                <th>Email</th>
                 <th>Programme</th>
                 <th>Date d'inscription</th>
                 <th>Statut</th>
@@ -267,12 +294,12 @@ export default function Students() {
 
                     {/* USER ID */}
                     <td>
-                      {student.user_id || "—"}
+                      {student.email || "—"}
                     </td>
 
                     {/* PROGRAMME */}
                     <td>
-                      {student.program_id || "—"}
+                      {student.program_name || student.program_id || "—"}
                     </td>
 
                     {/* DATE */}
@@ -282,21 +309,35 @@ export default function Students() {
 
                     {/* STATUT */}
                     <td>
-
-                      <Badge
-                        status={
-                          student.status === "ACTIVE"
-                            ? "Actif"
-                            : student.status === "INACTIVE"
-                            ? "Inactive"
-                            : student.status === "SUSPENDED"
-                            ? "Suspendu"
-                            : student.status === "PENDING"
-                            ? "Pending"
-                            : student.status || "Inconnu"
-                        }
-                      />
-
+                      {canManage ? (
+                        <select
+                          className="field"
+                          style={{ minWidth: 130 }}
+                          aria-label={`Statut de ${studentName}`}
+                          value={(student.status || "").toUpperCase()}
+                          onChange={async (e) => {
+                            try {
+                              await updateStudentStatus(student.student_id, e.target.value);
+                              setToastMsg(`Statut de ${studentName} mis à jour.`);
+                            } catch (err) {
+                              setToastMsg(err.message);
+                            }
+                            setToastShow(true);
+                          }}
+                        >
+                          {STUDENT_STATUSES.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Badge
+                          status={
+                            STUDENT_STATUSES.find((option) => option.value === (student.status || "").toUpperCase())?.label ||
+                            student.status ||
+                            "Inconnu"
+                          }
+                        />
+                      )}
                     </td>
 
                     {/* ACTIONS */}
@@ -322,15 +363,15 @@ export default function Students() {
                           Voir
                         </button>
 
+                        {canManage && (
                         <button
                           className="btn ghost sm"
                           style={{
                             color: "var(--danger)",
                           }}
                           onClick={async () => {
-
+                            if (!window.confirm(`Supprimer le dossier de ${studentName} ?`)) return;
                             try {
-
                               await deleteStudent(
                                 student.student_id ||
                                   student.id
@@ -359,6 +400,7 @@ export default function Students() {
                         >
                           Supprimer
                         </button>
+                        )}
 
                       </div>
 
@@ -375,6 +417,22 @@ export default function Students() {
         )}
 
       </div>
+
+      <Modal
+        open={modalOpen}
+        title="Inscrire un étudiant"
+        onClose={() => setModalOpen(false)}
+      >
+        <StudentForm
+          onSubmit={registerStudent}
+          onCancel={() => setModalOpen(false)}
+          onCreated={(_student, message) => {
+            setModalOpen(false);
+            setToastMsg(message);
+            setToastShow(true);
+          }}
+        />
+      </Modal>
 
       <Toast
         show={toastShow}

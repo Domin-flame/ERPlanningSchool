@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -132,6 +133,63 @@ def create_student(payload: schemas.StudentCreate, background_tasks: BackgroundT
         full_name=parent_user.name,
     )
 
+    return student
+
+
+VALID_STUDENT_STATUSES = {"ACTIVE", "PENDING", "INACTIVE", "SUSPENDED"}
+
+
+@router.post("/students/register", response_model=schemas.StudentRead, status_code=status.HTTP_201_CREATED)
+def register_student(payload: schemas.StudentRegister, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Inscrit un nouvel étudiant : crée (ou réutilise) l'utilisateur puis le dossier étudiant.
+
+    Évite au personnel académique de devoir saisir des identifiants techniques
+    (user_id) : seuls le nom, l'email, le matricule et le programme sont requis.
+    """
+    from app.routers.academic_structure import program_crud
+
+    name = payload.name.strip()
+    matricule = payload.matricule.strip()
+    status_value = payload.status.strip().upper()
+    if not name or not matricule:
+        raise HTTPException(status_code=422, detail="Le nom et le matricule sont obligatoires")
+    if status_value not in VALID_STUDENT_STATUSES:
+        raise HTTPException(status_code=422, detail=f"Statut invalide. Valeurs autorisées : {sorted(VALID_STUDENT_STATUSES)}")
+    if not program_crud.get(db, payload.program_id):
+        raise HTTPException(status_code=404, detail="Programme introuvable")
+    if db.query(models.Student).filter(models.Student.matricule == matricule).first():
+        raise HTTPException(status_code=409, detail="Ce matricule est déjà attribué")
+
+    email = str(payload.email).lower()
+    user = db.query(models.User).filter(func.lower(models.User.email) == email).first()
+    if user:
+        if user.student is not None:
+            raise HTTPException(status_code=409, detail="Un étudiant utilise déjà cet email")
+        if user.role != "Student":
+            raise HTTPException(status_code=409, detail="Cet email appartient déjà à un membre du personnel")
+    else:
+        user = models.User(name=name, email=email, phone=payload.phone, role="Student")
+        db.add(user)
+        db.flush()
+
+    student = models.Student(
+        matricule=matricule,
+        enrollment_date=payload.enrollment_date,
+        status=status_value,
+        program_id=payload.program_id,
+        user_id=user.user_id,
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+
+    background_tasks.add_task(
+        publish_student_created,
+        student_id=student.student_id,
+        user_id=user.user_id,
+        matricule=student.matricule,
+        full_name=user.name,
+    )
     return student
 
 

@@ -299,6 +299,9 @@ services:
       # devenu obsolète/incompatible.
       DATABASE_SCHEMA: public
       DB_AUTO_INIT: "false"
+      # Données de démo (modules, semestres, campus, enseignant, étudiant
+      # liés par e-mail aux comptes de démo d'auth-service).
+      DB_AUTO_SEED: ${DB_AUTO_SEED:-true}
       JWT_SECRET: ${JWT_SECRET}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
@@ -333,6 +336,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
       NOTIFICATION_SERVICE_URL: http://notification-service:8006
+      # Identité étudiant (X-User-Email → id_student) pour /students/me/invoices
+      ACADEMIC_SERVICE_URL: http://academic-service:8002
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
     depends_on:
       finance-db:
@@ -432,7 +437,11 @@ services:
     environment:
       PORT: "3006"
       JWT_SECRET: ${JWT_SECRET}
+      CHATBOT_API_KEY: ${CHATBOT_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      CHATBOT_API_URL: ${CHATBOT_API_URL:-https://openrouter.ai/api/v1/chat/completions}
+      CHATBOT_MODEL: ${CHATBOT_MODEL:-openai/gpt-4o-mini}
+      CHATBOT_SITE_URL: ${CHATBOT_SITE_URL:-http://localhost:5173}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3006/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
@@ -461,6 +470,8 @@ services:
       NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service:8006}
       CHATBOT_SERVICE_URL: ${CHATBOT_SERVICE_URL:-http://chatbot-service:3006}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      # Requêtes /api autorisées par IP cliente et par fenêtre de 15 min.
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-1000}
     depends_on:
       auth-service:
         condition: service_healthy

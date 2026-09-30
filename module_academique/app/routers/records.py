@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -9,7 +9,7 @@ from app.database import get_db
 from app.events import publish_enrollment_created
 from app.routers.offerings import class_schedule_crud, course_offering_crud, exam_crud
 from app.routers.people import student_crud
-from app.authz import assert_owns_enrollment, assert_owns_exam, assert_owns_schedule, assert_owns_session, get_current_teacher
+from app.authz import assert_owns_enrollment, find_student_for_user, assert_owns_exam, assert_owns_schedule, assert_owns_session, get_current_teacher
 
 router = APIRouter(tags=["Academic Records"])
 
@@ -22,11 +22,47 @@ attendance_crud = CRUDBase(models.Attendance, "attendance_id")
 # ---------------------------------------------------------------------------
 # Enrollment
 # ---------------------------------------------------------------------------
+ENROLLMENT_MANAGER_ROLES = {"academic", "professeur"}
+
+
+def _authorize_enrollment(
+    db: Session,
+    student: models.Student,
+    user_id: Optional[int],
+    role: Optional[str],
+    email: Optional[str] = None,
+) -> None:
+    """Contrôle d'accès à la création d'inscription.
+
+    Les en-têtes X-User-* sont posés par la gateway à partir du JWT. Un
+    étudiant ne peut inscrire que son propre profil ; les rôles de gestion
+    académique peuvent inscrire n'importe quel étudiant.
+    """
+    if role is None:
+        return
+    normalized = role.lower()
+    if normalized in ENROLLMENT_MANAGER_ROLES:
+        return
+    if normalized == "student":
+        own = find_student_for_user(db, email, user_id)
+        if own is not None and own.student_id == student.student_id:
+            return
+    raise HTTPException(status_code=403, detail="Vous ne pouvez inscrire que votre propre profil étudiant")
+
+
 @router.post("/enrollments/", response_model=schemas.EnrollmentRead, status_code=status.HTTP_201_CREATED)
-def create_enrollment(payload: schemas.EnrollmentCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def create_enrollment(
+    payload: schemas.EnrollmentCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    x_user_id: Optional[int] = Header(None),
+    x_user_role: Optional[str] = Header(None),
+    x_user_email: Optional[str] = Header(None),
+):
     student = student_crud.get(db, payload.student_id)
     if not student:
         raise HTTPException(status_code=404, detail="Étudiant introuvable")
+    _authorize_enrollment(db, student, x_user_id, x_user_role, x_user_email)
     offering = course_offering_crud.get(db, payload.course_offering_id)
     if not offering:
         raise HTTPException(status_code=404, detail="Offre de cours introuvable")

@@ -14,7 +14,7 @@ export default function Toast({ show, message = "Tâche soumise", sub = "Votre o
       timer.current = setTimeout(() => setVisible(false), 3000);
     }
     return () => clearTimeout(timer.current);
-  }, [show]);
+  }, [show, message]);
 
   if (!visible) return null;
 

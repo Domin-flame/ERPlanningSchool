@@ -40,9 +40,19 @@ app.get('/api/docs.json', (req, res) => res.json(swaggerSpec));
 // ── Rate limiting ──────────────────────────────────────────────
 // Mitigation OWASP API4:2023 (Unrestricted Resource Consumption) et
 // OWASP API2:2023 (Broken Authentication — force brute sur /login).
+//
+// Le frontend (nginx) relaie toutes les requêtes du navigateur : sans
+// « trust proxy », tous les utilisateurs partagent l'IP du conteneur nginx
+// et donc le même quota. On fait confiance aux proxys des réseaux
+// privés/locaux (réseau Docker) pour lire l'IP cliente dans X-Forwarded-For.
+app.set('trust proxy', process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal');
+
+// Un seul chargement de tableau de bord déclenche plusieurs dizaines
+// d'appels API : 100 requêtes / 15 min bloquaient l'application (429) après
+// quelques pages. Quota ajustable via RATE_LIMIT_MAX.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: Number(process.env.RATE_LIMIT_MAX) || 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { detail: 'Trop de requêtes depuis cette IP. Réessayez dans 15 minutes.' },
@@ -52,10 +62,13 @@ app.use('/api/', limiter);
 // Limiteur dédié, plus strict, sur les endpoints d'authentification
 // sensibles (login / register / reset) pour ralentir le credential
 // stuffing et le brute force de mots de passe, indépendamment du quota
-// global de l'API.
+// global de l'API. Seules les tentatives en échec sont comptées : sinon
+// quelques connexions légitimes (ou un académique qui crée les comptes de
+// plusieurs étudiants) suffisaient à bloquer tout le monde derrière la même IP.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 10,
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   message: { detail: 'Trop de tentatives de connexion. Réessayez dans 15 minutes.' },
@@ -108,6 +121,11 @@ const RBAC_RULES = [
   // HR — 'student' et 'marketing' n'ont aucun accès au module RH.
   { prefix: '/api/hr', allow: ['academic', 'rh', 'finance', 'professeur'] },
 
+  // Inscription à une offre de cours : les étudiants peuvent créer
+  // uniquement leur propre inscription ; le service académique vérifie que
+  // le student_id appartient bien à l'utilisateur (X-User-Email).
+  { prefix: '/api/academic/enrollments', methods: new Set(['POST']), allow: ['academic', 'professeur', 'student'] },
+
   // Académique — lecture ouverte à tous les rôles authentifiés (portails
   // Dashboard/Analytics en ont besoin) ; écriture réservée à la Direction
   // (academic) et aux enseignants (ex : saisie de notes / présences).
@@ -125,11 +143,13 @@ const RBAC_RULES = [
 function rbacGuard(req, res, next) {
   if (!req.user) return next(); // routes publiques déjà filtrées par verifyToken
 
-  const rule = RBAC_RULES.find((r) => req.originalUrl.startsWith(r.prefix));
+  // Première règle dont le préfixe ET la méthode correspondent : une règle
+  // spécifique (ex. POST /enrollments) ne court-circuite jamais la règle
+  // générale du domaine pour les autres méthodes (ex. DELETE).
+  const rule = RBAC_RULES.find(
+    (r) => req.originalUrl.startsWith(r.prefix) && (!r.methods || r.methods.has(req.method))
+  );
   if (!rule) return next();
-
-  const methodGuarded = !rule.methods || rule.methods.has(req.method);
-  if (!methodGuarded) return next();
 
   const role = (req.user.role || '').toLowerCase();
   if (!rule.allow.includes(role)) {
@@ -141,7 +161,10 @@ function rbacGuard(req, res, next) {
 }
 
 async function messageConversationGuard(req, res, next) {
-  if (req.method !== 'POST' || !req.user) return next();
+  // Ne contrôle que la création de conversation (choix des destinataires) :
+  // l'envoi d'un message dans une conversation existante (POST /messages/)
+  // ne porte pas de participant_ids et est vérifié par message-service.
+  if (req.method !== 'POST' || !req.user || !/^\/conversations\/?$/.test(req.path)) return next();
   const participantIds = req.body?.participant_ids;
   if (!Array.isArray(participantIds) || participantIds.length === 0) {
     return res.status(400).json({ detail: 'Au moins un destinataire est requis' });
@@ -179,7 +202,11 @@ function forwardUserHeaders(proxyReq, req) {
 }
 
 function replayBody(proxyReq, req) {
-  if (req.body && Object.keys(req.body).length > 0) {
+  // express.json() a déjà consommé le flux : on réécrit le corps parsé.
+  // req._body est posé par body-parser dès qu'un corps JSON a été lu, y
+  // compris "{}" — sans cette réécriture, le Content-Length d'origine est
+  // transmis sans corps et le service en aval attend indéfiniment.
+  if (req._body || (req.body && Object.keys(req.body).length > 0)) {
     const body = JSON.stringify(req.body);
     proxyReq.setHeader('Content-Type', 'application/json');
     proxyReq.setHeader('Content-Length', Buffer.byteLength(body));
@@ -253,8 +280,21 @@ app.use('/api/messages', verifyToken, messageConversationGuard, makeProxy(SERVIC
 // Notifications
 app.use('/api/notifications', verifyToken, makeProxy(SERVICES.notification, { '^/api/notifications': '/api/v1/notifications' }, 'notification'));
 
-// IA conversationnelle
-app.use('/api/ai', verifyToken, makeProxy(SERVICES.chatbot, { '^/api/ai': '/api' }, 'chatbot'));
+// IA conversationnelle (chatbot-service)
+// Limite dédiée : chaque message déclenche un appel payant au fournisseur IA.
+const chatbotLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { detail: "Trop de messages envoyés à l'assistant. Réessayez dans une minute." },
+});
+const chatbotMessageLimiter = (req, res, next) => (req.method === 'POST' && /\/messages?\/?$/.test(req.path) ? chatbotLimiter(req, res, next) : next());
+
+// /assistant — conversations suivies : /api/ai/chats/... → /api/chats/...
+app.use('/api/ai', verifyToken, chatbotMessageLimiter, makeProxy(SERVICES.chatbot, { '^/api/ai': '/api' }, 'chatbot'));
+// /chatbot — Assistant Campus : /api/chatbot/message → /api/chatbot/message
+app.use('/api/chatbot', verifyToken, chatbotMessageLimiter, makeProxy(SERVICES.chatbot, {}, 'chatbot'));
 
 // ── Demo rate-limit ────────────────────────────────────────────
 const demoLimiter = rateLimit({ windowMs: 60 * 1000, max: 5 });
