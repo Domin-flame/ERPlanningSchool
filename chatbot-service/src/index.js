@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
@@ -123,6 +124,18 @@ function validateMessage(message) {
   return null;
 }
 
+// Limite par utilisateur (après verifyJWT) : chaque message déclenche un
+// appel payant au fournisseur IA. Complète la limite posée par la gateway
+// pour le cas où le service est joint directement (port exposé).
+const messageLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number(process.env.CHATBOT_RATE_LIMIT_PER_MINUTE) || 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `user:${req.user?.user_id ?? req.user?.sub ?? 'anonymous'}`,
+  message: { error: 'Too many requests', detail: "Trop de messages envoyés à l'assistant. Réessayez dans une minute." },
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -133,7 +146,7 @@ app.get('/health', (req, res) => {
 });
 
 // ── Assistant Campus (/chatbot) : question ponctuelle, historique fourni par le client ──
-app.post('/api/chatbot/message', verifyJWT, async (req, res) => {
+app.post('/api/chatbot/message', verifyJWT, messageLimiter, async (req, res) => {
   const invalid = validateMessage(req.body?.message);
   if (invalid) return res.status(invalid.status).json({ error: invalid.detail, detail: invalid.detail });
   const message = req.body.message.trim();
@@ -199,7 +212,7 @@ app.post('/api/chats', verifyJWT, (req, res) => {
 });
 
 // Send message and get AI response
-app.post('/api/chats/:conversation_id/messages', verifyJWT, async (req, res) => {
+app.post('/api/chats/:conversation_id/messages', verifyJWT, messageLimiter, async (req, res) => {
   const { language = 'fr' } = req.body || {};
   const invalid = validateMessage(req.body?.message);
   if (invalid) return res.status(invalid.status).json({ error: invalid.detail, detail: invalid.detail });
