@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Breadcrumbs from "../../components/Breadcrumbs.jsx";
 import StatCard from "../../components/StatCard.jsx";
-import Badge from "../../components/Badge.jsx";
 import Modal from "../../components/Modal.jsx";
 import Toast from "../../components/Toast.jsx";
 import Skeleton, { SkeletonList } from "../../components/Skeleton.jsx";
@@ -9,6 +8,7 @@ import EmptyState from "../../components/EmptyState.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import api from "../../api/client.js";
+import EmployeeTable from "./EmployeeTable.jsx";
 
 const ROLES = [
   { value: "professeur", label: "Professeur" },
@@ -418,47 +418,12 @@ export default function HR() {
               action={<button className="btn primary" onClick={() => setModalEmp(true)}>+ Ajouter un employé</button>}
             />
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Matricule</th>
-                    <th>Employé</th>
-                    <th>Département</th>
-                    <th>Poste</th>
-                    <th>Salaire</th>
-                    <th>Statut</th>
-                    <th style={{ textAlign: "right" }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((employee) => (
-                    <tr key={employee.id || employee.matricule} className="row-hover">
-                      <td><code className="code-tag">{employee.matricule}</code></td>
-                      <td>
-                        <strong>{employee.first_name} {employee.last_name}</strong>
-                        <br />
-                        <small className="muted">{employee.email}</small>
-                      </td>
-                      <td>{employee.department}</td>
-                      <td>{employee.position}</td>
-                      <td><strong>{formatMoney(employee.base_salary)}</strong></td>
-                      <td><Badge status={employee.is_active ? "Active" : "Inactive"} /></td>
-                      <td>
-                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                          <button className="btn ghost sm" onClick={() => openEditEmployee(employee)}>Modifier</button>
-                          {employee.is_active && (
-                            <button className="btn ghost sm" onClick={() => handleDeactivateEmployee(employee)}>
-                              Désactiver
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <EmployeeTable
+              employees={employees}
+              formatMoney={formatMoney}
+              onEdit={openEditEmployee}
+              onDeactivate={handleDeactivateEmployee}
+            />
           )}
         </div>
 

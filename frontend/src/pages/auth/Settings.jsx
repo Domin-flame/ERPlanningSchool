@@ -130,7 +130,7 @@ export default function Settings() {
                     savePreference(
                       "notificationsEnabled",
                       e.target.checked,
-                      e.target.checked ? "Notifications activÃ©es." : "Notifications dÃ©sactivÃ©es."
+                      e.target.checked ? "Notifications activées." : "Notifications désactivées."
                     )
                   }
                 />

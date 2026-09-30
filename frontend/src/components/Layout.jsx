@@ -1,21 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
   GraduationCap,
-  Presentation,
-  Target,
-  Wallet,
-  Users,
-  Folder,
   BookOpen,
-  CalendarDays,
-  MessageSquare,
-  BarChart3,
-  Settings,
-  PenSquare,
-  CreditCard,
-  Receipt,
+  Users,
   Menu,
   X,
   Search,
@@ -27,99 +15,11 @@ import {
   Info,
   FileText,
   Banknote,
-  Bot,
 } from "lucide-react";
 import AppLogo from "./AppLogo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useData } from "../context/DataContext.jsx";
-
-// Navigation spécifique par rôle
-const ROLE_NAVIGATION = {
-  academic: {
-    portals: [
-      { to: "/", label: "Dashboard Direction", icon: LayoutDashboard, end: true },
-      { to: "/student", label: "Portail Étudiant", icon: GraduationCap },
-      { to: "/professeur", label: "Espace Enseignant", icon: Presentation },
-      { to: "/marketing", label: "Portail Marketing", icon: Target },
-      { to: "/finance", label: "Portail Finance", icon: Wallet },
-      { to: "/hr", label: "Portail RH", icon: Users },
-    ],
-    tools: [
-      { to: "/students", label: "Dossiers Étudiants", icon: Folder },
-      { to: "/courses", label: "Catalogue Cours", icon: BookOpen },
-      { to: "/calendar", label: "Examens & Plannings", icon: CalendarDays },
-      { to: "/messages", label: "Messagerie", icon: MessageSquare },
-      { to: "/assistant", label: "Assistant IA", icon: Bot },
-      { to: "/analytics", label: "Rapports & Analytics", icon: BarChart3 },
-      { to: "/settings", label: "Paramètres ERP", icon: Settings },
-    ],
-  },
-  professeur: {
-    portals: [
-      { to: "/professeur", label: "Mon Espace Enseignant", icon: Presentation, end: true },
-    ],
-    tools: [
-      { to: "/courses", label: "Mes Cours Enseignés", icon: BookOpen },
-      { to: "/students", label: "Saisie Notes & Appel", icon: PenSquare },
-      { to: "/calendar", label: "Mon Emploi du temps", icon: CalendarDays },
-      { to: "/messages", label: "Messagerie & Avis", icon: MessageSquare },
-      { to: "/assistant", label: "Assistant IA", icon: Bot },
-      { to: "/settings", label: "Mon Profil", icon: Settings },
-    ],
-  },
-  student: {
-    portals: [
-      { to: "/student", label: "Mon Espace Étudiant", icon: GraduationCap, end: true },
-    ],
-    tools: [
-      { to: "/courses", label: "Mes Cours Inscrits", icon: BookOpen },
-      { to: "/calendar", label: "Mon Emploi du Temps", icon: CalendarDays },
-      { to: "/finance", label: "Mes Frais & Solde", icon: CreditCard },
-      { to: "/messages", label: "Contacter Enseignant", icon: MessageSquare },
-      { to: "/assistant", label: "Assistant IA", icon: Bot },
-      { to: "/settings", label: "Mon Profil", icon: Settings },
-    ],
-  },
-  rh: {
-    portals: [
-      { to: "/hr", label: "Tableau de Bord RH", icon: Users, end: true },
-    ],
-    tools: [
-      { to: "/hr", label: "Personnel & Paie", icon: Wallet },
-      { to: "/courses", label: "Formateurs & Enseignants", icon: Presentation },
-      { to: "/analytics", label: "Rapports RH", icon: BarChart3 },
-      { to: "/messages", label: "Messagerie Interne", icon: MessageSquare },
-      { to: "/assistant", label: "Assistant IA", icon: Bot },
-      { to: "/settings", label: "Paramètres", icon: Settings },
-    ],
-  },
-  finance: {
-    portals: [
-      { to: "/finance", label: "Tableau de Bord Finance", icon: Wallet, end: true },
-    ],
-    tools: [
-      { to: "/finance", label: "Factures & Encaissements", icon: Receipt },
-      { to: "/students", label: "Compte Étudiants", icon: GraduationCap },
-      { to: "/analytics", label: "Bilan & Bilan Trésorerie", icon: BarChart3 },
-      { to: "/messages", label: "Messagerie", icon: MessageSquare },
-      { to: "/assistant", label: "Assistant IA", icon: Bot },
-      { to: "/settings", label: "Paramètres", icon: Settings },
-    ],
-  },
-  marketing: {
-    portals: [
-      { to: "/marketing", label: "Tableau de Bord Marketing", icon: Target, end: true },
-    ],
-    tools: [
-      { to: "/marketing", label: "CRM Prospects & Leads", icon: Target },
-      { to: "/students", label: "Suivi des Inscriptions", icon: GraduationCap },
-      { to: "/analytics", label: "Analytics Conversions", icon: BarChart3 },
-      { to: "/messages", label: "Messagerie", icon: MessageSquare },
-      { to: "/assistant", label: "Assistant IA", icon: Bot },
-      { to: "/settings", label: "Paramètres", icon: Settings },
-    ],
-  },
-};
+import { getRoleLabel, getRoleNavigation } from "../app/access.js";
 
 // Icônes et libellés par type de notification
 const NOTIF_ICONS = {
@@ -235,8 +135,16 @@ export default function Layout() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
 
-  const currentRole = user?.role || "academic";
-  const navConfig = ROLE_NAVIGATION[currentRole] || ROLE_NAVIGATION.academic;
+  // Referme les panneaux flottants à chaque changement de page
+  useEffect(() => {
+    setNotifOpen(false);
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  const currentRole = user?.role || "";
+  const roleLabel = user?.role_label || user?.roleLabel || getRoleLabel(currentRole);
+  // Navigation du rôle, filtrée selon les routes réellement autorisées (app/access.js)
+  const navConfig = useMemo(() => getRoleNavigation(currentRole), [currentRole]);
   const unreadNotifs = notifications.filter((n) => n.unread).length;
 
   // Index de recherche recalculé uniquement quand les données changent
@@ -289,7 +197,7 @@ export default function Layout() {
 
         {/* Portails d'accès par rôle */}
         <nav className="nav">
-          <span className="nav-label">Portail {user?.roleLabel || "Principal"}</span>
+          <span className="nav-label">Portail {roleLabel || "Principal"}</span>
           {navConfig.portals.map((item) => (
             <NavLink
               key={item.to}
@@ -328,7 +236,7 @@ export default function Layout() {
               {user?.full_name || user?.name || "Utilisateur"}
             </strong>
             <span className={`role-pill ${currentRole}`} style={{ fontSize: 11, padding: "2px 8px" }}>
-              {user?.role_label || user?.roleLabel || currentRole}
+              {roleLabel}
             </span>
           </div>
           <button className="icon-btn" onClick={logout} title="Se déconnecter" style={{ flexShrink: 0 }}>
@@ -339,6 +247,121 @@ export default function Layout() {
 
       {/* Main content viewport */}
       <main className="main">
+        {/* Barre supérieure : menu mobile, recherche globale, notifications */}
+        <header className="topbar">
+          <button
+            className="hamburger"
+            type="button"
+            onClick={() => setSidebarOpen((open) => !open)}
+            aria-label={sidebarOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          >
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
+          <div className="search">
+            <div className="search-inner">
+              <Search size={16} className="search-ico" aria-hidden="true" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setSearchQuery("");
+                    e.currentTarget.blur();
+                  }
+                }}
+                placeholder="Rechercher un étudiant, un cours, une facture…"
+                aria-label="Recherche globale"
+              />
+            </div>
+            <div className={`search-panel ${showResultsPanel ? "open" : ""}`} role="listbox" aria-label="Résultats de recherche">
+              {totalResults === 0 ? (
+                <p className="muted" style={{ fontSize: 13 }}>Aucun résultat pour « {searchQuery.trim()} ».</p>
+              ) : (
+                searchResults.map(([category, items]) => (
+                  <div key={category} style={{ marginBottom: 10 }}>
+                    <small className="muted" style={{ fontWeight: 700, textTransform: "uppercase" }}>{category}</small>
+                    {items.map((entry) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        role="option"
+                        aria-selected="false"
+                        className="search-result-row"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => goToResult(entry)}
+                        style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "8px 10px", border: 0, background: "transparent", textAlign: "left", cursor: "pointer" }}
+                      >
+                        <entry.icon size={16} aria-hidden="true" />
+                        <span style={{ minWidth: 0 }}>
+                          <strong style={{ display: "block", fontSize: 14 }}>{entry.title}</strong>
+                          {entry.subtitle && <small className="muted">{entry.subtitle}</small>}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="top-actions">
+            <div className="notif-wrap">
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() => setNotifOpen((open) => !open)}
+                aria-label={`Notifications${unreadNotifs ? ` (${unreadNotifs} non lues)` : ""}`}
+                aria-expanded={notifOpen}
+              >
+                <Bell size={18} strokeWidth={2} />
+                {unreadNotifs > 0 && <span className="counter">{unreadNotifs > 99 ? "99+" : unreadNotifs}</span>}
+              </button>
+              <div className={`notif-panel ${notifOpen ? "open" : ""}`}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderBottom: "1px solid var(--line)" }}>
+                  <strong>Notifications</strong>
+                  <button className="btn ghost sm" type="button" onClick={markAllNotificationsRead} disabled={unreadNotifs === 0}>
+                    Tout lire
+                  </button>
+                </div>
+                <div style={{ maxHeight: 360, overflowY: "auto" }}>
+                  {notifications.length === 0 ? (
+                    <p className="muted" style={{ padding: 14, fontSize: 13 }}>Aucune notification.</p>
+                  ) : (
+                    notifications.slice(0, 8).map((n) => {
+                      const meta = NOTIF_ICONS[n.type] || NOTIF_ICONS.info;
+                      const Icon = meta.icon;
+                      return (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onClick={() => handleNotifClick(n)}
+                          style={{ display: "flex", gap: 10, width: "100%", padding: "10px 14px", border: 0, borderBottom: "1px solid var(--line)", background: n.unread ? "var(--brand-soft, #fdeee0)" : "transparent", textAlign: "left", cursor: "pointer" }}
+                        >
+                          <span className={meta.className}><Icon size={16} /></span>
+                          <span style={{ minWidth: 0, flex: 1 }}>
+                            <strong style={{ display: "block", fontSize: 13 }}>{n.title}</strong>
+                            {n.desc && <small className="muted" style={{ display: "block" }}>{n.desc}</small>}
+                            {n.time && <small className="muted">{n.time}</small>}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <div style={{ padding: 10, textAlign: "center" }}>
+                  <NavLink to="/notifications" onClick={() => setNotifOpen(false)}>
+                    Voir toutes les notifications
+                  </NavLink>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
         {/* Sub-container page avec transition animée */}
         <section className="content page-transition-wrap" key={location.pathname}>
           <Outlet />

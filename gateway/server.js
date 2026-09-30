@@ -108,6 +108,11 @@ const RBAC_RULES = [
   // HR — 'student' et 'marketing' n'ont aucun accès au module RH.
   { prefix: '/api/hr', allow: ['academic', 'rh', 'finance', 'professeur'] },
 
+  // Inscription à une offre de cours : les étudiants peuvent créer
+  // uniquement leur propre inscription ; le service académique vérifie que
+  // le student_id appartient bien à l'utilisateur (X-User-ID).
+  { prefix: '/api/academic/enrollments', methods: new Set(['POST']), allow: ['academic', 'professeur', 'student'] },
+
   // Académique — lecture ouverte à tous les rôles authentifiés (portails
   // Dashboard/Analytics en ont besoin) ; écriture réservée à la Direction
   // (academic) et aux enseignants (ex : saisie de notes / présences).
@@ -125,11 +130,13 @@ const RBAC_RULES = [
 function rbacGuard(req, res, next) {
   if (!req.user) return next(); // routes publiques déjà filtrées par verifyToken
 
-  const rule = RBAC_RULES.find((r) => req.originalUrl.startsWith(r.prefix));
+  // Première règle dont le préfixe ET la méthode correspondent : une règle
+  // spécifique (ex. POST /enrollments) ne court-circuite jamais la règle
+  // générale du domaine pour les autres méthodes (ex. DELETE).
+  const rule = RBAC_RULES.find(
+    (r) => req.originalUrl.startsWith(r.prefix) && (!r.methods || r.methods.has(req.method))
+  );
   if (!rule) return next();
-
-  const methodGuarded = !rule.methods || rule.methods.has(req.method);
-  if (!methodGuarded) return next();
 
   const role = (req.user.role || '').toLowerCase();
   if (!rule.allow.includes(role)) {
@@ -179,7 +186,11 @@ function forwardUserHeaders(proxyReq, req) {
 }
 
 function replayBody(proxyReq, req) {
-  if (req.body && Object.keys(req.body).length > 0) {
+  // express.json() a déjà consommé le flux : on réécrit le corps parsé.
+  // req._body est posé par body-parser dès qu'un corps JSON a été lu, y
+  // compris "{}" — sans cette réécriture, le Content-Length d'origine est
+  // transmis sans corps et le service en aval attend indéfiniment.
+  if (req._body || (req.body && Object.keys(req.body).length > 0)) {
     const body = JSON.stringify(req.body);
     proxyReq.setHeader('Content-Type', 'application/json');
     proxyReq.setHeader('Content-Length', Buffer.byteLength(body));
@@ -253,8 +264,21 @@ app.use('/api/messages', verifyToken, messageConversationGuard, makeProxy(SERVIC
 // Notifications
 app.use('/api/notifications', verifyToken, makeProxy(SERVICES.notification, { '^/api/notifications': '/api/v1/notifications' }, 'notification'));
 
-// IA conversationnelle
-app.use('/api/ai', verifyToken, makeProxy(SERVICES.chatbot, { '^/api/ai': '/api' }, 'chatbot'));
+// IA conversationnelle (chatbot-service)
+// Limite dédiée : chaque message déclenche un appel payant au fournisseur IA.
+const chatbotLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { detail: "Trop de messages envoyés à l'assistant. Réessayez dans une minute." },
+});
+const chatbotMessageLimiter = (req, res, next) => (req.method === 'POST' && /\/messages?\/?$/.test(req.path) ? chatbotLimiter(req, res, next) : next());
+
+// /assistant — conversations suivies : /api/ai/chats/... → /api/chats/...
+app.use('/api/ai', verifyToken, chatbotMessageLimiter, makeProxy(SERVICES.chatbot, { '^/api/ai': '/api' }, 'chatbot'));
+// /chatbot — Assistant Campus : /api/chatbot/message → /api/chatbot/message
+app.use('/api/chatbot', verifyToken, chatbotMessageLimiter, makeProxy(SERVICES.chatbot, {}, 'chatbot'));
 
 // ── Demo rate-limit ────────────────────────────────────────────
 const demoLimiter = rateLimit({ windowMs: 60 * 1000, max: 5 });

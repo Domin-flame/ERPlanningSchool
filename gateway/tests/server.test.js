@@ -102,6 +102,58 @@ describe('RBAC centralisé (rbacGuard)', () => {
   });
 });
 
+describe('Inscriptions étudiantes (/api/academic/enrollments)', () => {
+  const auth = (role) => `Bearer ${token(role)}`;
+
+  it("autorise un 'student' à créer une inscription (backend absent -> pas de 403)", async () => {
+    const res = await request(app)
+      .post('/api/academic/enrollments/')
+      .set('Authorization', auth('student'))
+      .send({ student_id: 1, course_offering_id: 1 });
+    expect(res.status).not.toBe(403);
+  });
+
+  it("bloque un 'student' qui tente de supprimer une inscription", async () => {
+    const res = await request(app)
+      .delete('/api/academic/enrollments/1')
+      .set('Authorization', auth('student'));
+    expect(res.status).toBe(403);
+  });
+
+  it("bloque 'marketing' sur la création d'inscription", async () => {
+    const res = await request(app)
+      .post('/api/academic/enrollments/')
+      .set('Authorization', auth('marketing'))
+      .send({ student_id: 1, course_offering_id: 1 });
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('Chatbot (/api/chatbot, /api/ai)', () => {
+  const auth = (role) => `Bearer ${token(role)}`;
+
+  it('refuse /api/chatbot/message sans token', async () => {
+    const res = await request(app).post('/api/chatbot/message').send({ message: 'Bonjour' });
+    expect(res.status).toBe(401);
+  });
+
+  it('proxifie /api/chatbot/message pour un utilisateur connecté (backend absent -> 503)', async () => {
+    const res = await request(app)
+      .post('/api/chatbot/message')
+      .set('Authorization', auth('student'))
+      .send({ message: 'Bonjour' });
+    expect([503, 502]).toContain(res.status);
+  });
+
+  it('proxifie un POST /api/ai/chats avec un corps vide "{}" sans bloquer', async () => {
+    const res = await request(app)
+      .post('/api/ai/chats')
+      .set('Authorization', auth('student'))
+      .send({});
+    expect([503, 502]).toContain(res.status);
+  });
+});
+
 describe('Rate limiting (démo)', () => {
   it('bloque après 5 requêtes en 60s sur /api/demo/ratelimit', async () => {
     for (let i = 0; i < 5; i += 1) {
