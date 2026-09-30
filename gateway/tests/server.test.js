@@ -154,6 +154,17 @@ describe('Chatbot (/api/chatbot, /api/ai)', () => {
   });
 });
 
+describe('Rate limiting global', () => {
+  it("ne bloque pas une navigation normale (plusieurs dizaines d'appels API)", async () => {
+    const statuses = [];
+    for (let i = 0; i < 150; i += 1) {
+      const res = await request(app).get('/api/route-inexistante');
+      statuses.push(res.status);
+    }
+    expect(statuses).not.toContain(429);
+  });
+});
+
 describe('Rate limiting (démo)', () => {
   it('bloque après 5 requêtes en 60s sur /api/demo/ratelimit', async () => {
     for (let i = 0; i < 5; i += 1) {

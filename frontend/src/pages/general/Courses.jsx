@@ -8,12 +8,15 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { canManageCourses } from "../../app/access.js";
 import {
   createCourse,
+  createCourseOffering,
   deleteCourse,
   fetchCourseCatalog,
+  fetchCourseOfferings,
   getCourseErrorMessage,
 } from "../../services/courseService.js";
 import CourseForm from "./CourseForm.jsx";
 import CourseList from "./CourseList.jsx";
+import CourseOfferingForm from "./CourseOfferingForm.jsx";
 
 export default function Courses() {
   const location = useLocation();
@@ -23,6 +26,8 @@ export default function Courses() {
 
   const [courses, setCourses] = useState([]);
   const [modules, setModules] = useState([]);
+  const [offerings, setOfferings] = useState([]);
+  const [offeringCourse, setOfferingCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
 
@@ -43,9 +48,10 @@ export default function Courses() {
     setLoading(true);
     setFetchError("");
     try {
-      const catalog = await fetchCourseCatalog();
+      const [catalog, loadedOfferings] = await Promise.all([fetchCourseCatalog(), fetchCourseOfferings()]);
       setCourses(catalog.courses);
       setModules(catalog.modules);
+      setOfferings(loadedOfferings);
     } catch (error) {
       setFetchError(getCourseErrorMessage(error, "Impossible de charger le catalogue académique."));
     } finally {
@@ -71,15 +77,36 @@ export default function Courses() {
     });
   }, [courses, query, moduleFilter]);
 
+  const offeringCounts = useMemo(() => {
+    const counts = new Map();
+    offerings.forEach((offering) => counts.set(offering.course_id, (counts.get(offering.course_id) || 0) + 1));
+    return counts;
+  }, [offerings]);
+
   const handleCreateCourse = async (payload) => {
     try {
       const createdCourse = await createCourse(payload);
       setCourses((current) => [...current, createdCourse]);
       setShowForm(false);
       notify(`Le cours « ${createdCourse.title || payload.title} » a été ajouté au catalogue.`);
+      // Sans session ouverte, les étudiants ne peuvent pas s'y inscrire :
+      // on enchaîne directement sur l'ouverture d'une session.
+      setOfferingCourse(createdCourse);
       refreshData();
     } catch (error) {
       throw new Error(getCourseErrorMessage(error, "Impossible de créer le cours."));
+    }
+  };
+
+  const handleCreateOffering = async (payload) => {
+    try {
+      const createdOffering = await createCourseOffering(payload);
+      setOfferings((current) => [...current, createdOffering]);
+      notify(`Session « ${createdOffering.name} » ouverte : les étudiants peuvent s’y inscrire.`);
+      setOfferingCourse(null);
+      refreshData();
+    } catch (error) {
+      throw new Error(getCourseErrorMessage(error, "Impossible d’ouvrir cette session."));
     }
   };
 
@@ -118,7 +145,7 @@ export default function Courses() {
         <div>
           <h2>Catalogue & Gestion des Cours</h2>
           <p className="muted">
-            {courses.length} cours · {modules.length} module(s) chargés depuis le service académique.
+            {courses.length} cours · {modules.length} module(s) · {offerings.length} session(s) ouverte(s) aux inscriptions.
           </p>
         </div>
         {canManage && (
@@ -181,7 +208,9 @@ export default function Courses() {
       <CourseList
         courses={filtered}
         modules={modules}
+        offeringCounts={offeringCounts}
         onDelete={canManage ? handleDeleteCourse : undefined}
+        onOpenOffering={canManage ? setOfferingCourse : undefined}
       />
 
       {showForm && canManage && (
@@ -189,6 +218,14 @@ export default function Courses() {
           modules={modules}
           onClose={() => setShowForm(false)}
           onSubmit={handleCreateCourse}
+        />
+      )}
+
+      {offeringCourse && canManage && (
+        <CourseOfferingForm
+          course={offeringCourse}
+          onClose={() => setOfferingCourse(null)}
+          onSubmit={handleCreateOffering}
         />
       )}
 

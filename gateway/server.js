@@ -40,9 +40,19 @@ app.get('/api/docs.json', (req, res) => res.json(swaggerSpec));
 // ── Rate limiting ──────────────────────────────────────────────
 // Mitigation OWASP API4:2023 (Unrestricted Resource Consumption) et
 // OWASP API2:2023 (Broken Authentication — force brute sur /login).
+//
+// Le frontend (nginx) relaie toutes les requêtes du navigateur : sans
+// « trust proxy », tous les utilisateurs partagent l'IP du conteneur nginx
+// et donc le même quota. On fait confiance aux proxys des réseaux
+// privés/locaux (réseau Docker) pour lire l'IP cliente dans X-Forwarded-For.
+app.set('trust proxy', process.env.TRUST_PROXY || 'loopback, linklocal, uniquelocal');
+
+// Un seul chargement de tableau de bord déclenche plusieurs dizaines
+// d'appels API : 100 requêtes / 15 min bloquaient l'application (429) après
+// quelques pages. Quota ajustable via RATE_LIMIT_MAX.
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: Number(process.env.RATE_LIMIT_MAX) || 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { detail: 'Trop de requêtes depuis cette IP. Réessayez dans 15 minutes.' },
@@ -110,7 +120,7 @@ const RBAC_RULES = [
 
   // Inscription à une offre de cours : les étudiants peuvent créer
   // uniquement leur propre inscription ; le service académique vérifie que
-  // le student_id appartient bien à l'utilisateur (X-User-ID).
+  // le student_id appartient bien à l'utilisateur (X-User-Email).
   { prefix: '/api/academic/enrollments', methods: new Set(['POST']), allow: ['academic', 'professeur', 'student'] },
 
   // Académique — lecture ouverte à tous les rôles authentifiés (portails

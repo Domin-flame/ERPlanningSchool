@@ -1,4 +1,6 @@
 """Autorisation objet pour les ressources académiques."""
+from typing import Optional
+
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -22,6 +24,27 @@ def get_current_academic_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Aucun profil académique n'est associé à ce compte.")
     return user
+
+
+def find_student_for_user(db: Session, email: Optional[str], user_id: Optional[int]) -> Optional[models.Student]:
+    """Profil étudiant du compte connecté.
+
+    Les comptes vivent dans auth-service : l'identifiant X-User-ID n'a donc
+    aucun lien avec users.user_id d'academic-service. Le lien fiable entre
+    les deux bases est l'e-mail (X-User-Email, posé par la gateway à partir
+    du JWT), comme pour les enseignants. L'identifiant n'est utilisé qu'en
+    l'absence d'e-mail (appel direct au service, hors gateway).
+    """
+    if email:
+        return (
+            db.query(models.Student)
+            .join(models.User, models.Student.user_id == models.User.user_id)
+            .filter(models.User.email.ilike(email.strip()))
+            .first()
+        )
+    if user_id is not None:
+        return db.query(models.Student).filter(models.Student.user_id == user_id).first()
+    return None
 
 
 def get_current_teacher(

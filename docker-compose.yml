@@ -299,6 +299,9 @@ services:
       # devenu obsolète/incompatible.
       DATABASE_SCHEMA: public
       DB_AUTO_INIT: "false"
+      # Données de démo (modules, semestres, campus, enseignant, étudiant
+      # liés par e-mail aux comptes de démo d'auth-service).
+      DB_AUTO_SEED: ${DB_AUTO_SEED:-true}
       JWT_SECRET: ${JWT_SECRET}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
@@ -465,6 +468,8 @@ services:
       NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service:8006}
       CHATBOT_SERVICE_URL: ${CHATBOT_SERVICE_URL:-http://chatbot-service:3006}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      # Requêtes /api autorisées par IP cliente et par fenêtre de 15 min.
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-1000}
     depends_on:
       auth-service:
         condition: service_healthy

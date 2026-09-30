@@ -6,8 +6,10 @@ import React from "react";
  *   courses  — cours à afficher
  *   modules  — modules (pour afficher le module parent)
  *   onDelete — (course) => void ; si absent, aucune action de suppression
+ *   offeringCounts — Map course_id → nombre de sessions ouvertes (optionnel)
+ *   onOpenOffering — (course) => void ; si présent, bouton « Ouvrir une session »
  */
-export default function CourseList({ courses = [], modules = [], onDelete }) {
+export default function CourseList({ courses = [], modules = [], onDelete, offeringCounts, onOpenOffering }) {
   const moduleById = new Map(modules.map((module) => [module.module_id, module]));
 
   if (courses.length === 0) {
@@ -38,19 +40,38 @@ export default function CourseList({ courses = [], modules = [], onDelete }) {
                 <span>📦 Module : {moduleLabel}</span>
                 <span>🎓 {course.credits ?? 0} crédits ECTS</span>
                 {course.teacher && <span>👨‍🏫 {course.teacher}</span>}
+                {offeringCounts && (
+                  <span>
+                    🗓️ {offeringCounts.get(course.course_id)
+                      ? `${offeringCounts.get(course.course_id)} session(s) ouverte(s)`
+                      : "Aucune session ouverte — inscriptions impossibles"}
+                  </span>
+                )}
               </div>
             </div>
-            {onDelete && (
+            {(onDelete || onOpenOffering) && (
               <div className="actions">
-                <button
-                  className="btn ghost sm"
-                  type="button"
-                  style={{ color: "var(--danger)" }}
-                  onClick={() => onDelete(course)}
-                  aria-label={`Supprimer le cours ${course.code}`}
-                >
-                  Supprimer
-                </button>
+                {onOpenOffering && (
+                  <button
+                    className="btn sm"
+                    type="button"
+                    onClick={() => onOpenOffering(course)}
+                    aria-label={`Ouvrir une session du cours ${course.code}`}
+                  >
+                    Ouvrir une session
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    className="btn ghost sm"
+                    type="button"
+                    style={{ color: "var(--danger)" }}
+                    onClick={() => onDelete(course)}
+                    aria-label={`Supprimer le cours ${course.code}`}
+                  >
+                    Supprimer
+                  </button>
+                )}
               </div>
             )}
           </article>

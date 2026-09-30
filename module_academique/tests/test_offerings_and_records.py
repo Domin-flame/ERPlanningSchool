@@ -131,12 +131,67 @@ def test_student_can_only_enroll_own_profile(client, full_context):
     )
     assert marketing.status_code == 403
 
+    # Via la gateway : X-User-ID vient d'auth-service (sans rapport avec
+    # users.user_id ici) ; c'est l'e-mail qui identifie l'étudiant.
+    other_email = client.post(
+        "/enrollments/",
+        json=payload,
+        headers={"X-User-ID": str(student["user_id"]), "X-User-Role": "student", "X-User-Email": "bob@example.com"},
+    )
+    assert other_email.status_code == 403
+
     own = client.post(
         "/enrollments/",
         json=payload,
-        headers={"X-User-ID": str(student["user_id"]), "X-User-Role": "student"},
+        headers={"X-User-ID": "4242", "X-User-Role": "student", "X-User-Email": "ALICE@example.com"},
     )
     assert own.status_code == 201
+
+
+def test_student_overview_resolves_profile_by_email(client, full_context):
+    semester = full_context["semester"]
+    offering = client.post(
+        "/course-offerings/",
+        json={
+            "name": "SQL avancé - Groupe C",
+            "campus_id": full_context["campus"]["campus_id"],
+            "teacher_id": full_context["teacher"]["teacher_id"],
+            "course_id": full_context["course"]["course_id"],
+            "semester_id": semester["semester_id"],
+        },
+    ).json()
+    enrollment = client.post(
+        "/enrollments/",
+        json={
+            "status": "Active",
+            "enrollment_date": "2025-09-05",
+            "student_id": full_context["student"]["student_id"],
+            "course_offering_id": offering["course_offering_id"],
+        },
+        headers={"X-User-ID": "4242", "X-User-Role": "student", "X-User-Email": "alice@example.com"},
+    )
+    assert enrollment.status_code == 201
+
+    overview = client.get(
+        f"/student/me/overview?semester_id={semester['semester_id']}",
+        headers={"X-User-ID": "4242", "X-User-Role": "student", "X-User-Email": "alice@example.com"},
+    )
+    assert overview.status_code == 200
+    body = overview.json()
+    assert body["student"]["student_id"] == full_context["student"]["student_id"]
+    assert [course["course_offering_id"] for course in body["courses"]] == [offering["course_offering_id"]]
+
+    unknown = client.get(
+        "/student/me/overview",
+        headers={"X-User-ID": str(full_context["student"]["user_id"]), "X-User-Role": "student", "X-User-Email": "nobody@example.com"},
+    )
+    assert unknown.status_code == 404
+
+    teacher = client.get(
+        "/student/me/overview",
+        headers={"X-User-Role": "professeur", "X-User-Email": "alice@example.com"},
+    )
+    assert teacher.status_code == 403
 
 
 def test_full_academic_flow_enrollment_grade_attendance(client, full_context):

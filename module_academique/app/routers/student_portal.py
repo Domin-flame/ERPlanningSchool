@@ -5,17 +5,21 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app import models
+from app.authz import find_student_for_user
 from app.database import get_db
 
 router = APIRouter(prefix="/student/me", tags=["Student Portal"])
 
 
-def _student_or_403(db: Session, user_id: Optional[int], role: Optional[str]):
-    if (role or "").lower() != "student" or not user_id:
-        raise HTTPException(status_code=403, detail="Acces reserve aux etudiants")
-    student = db.query(models.Student).filter(models.Student.user_id == user_id).first()
+def _student_or_403(db: Session, user_id: Optional[int], role: Optional[str], email: Optional[str] = None):
+    if (role or "").lower() != "student" or not (email or user_id):
+        raise HTTPException(status_code=403, detail="Accès réservé aux étudiants")
+    student = find_student_for_user(db, email, user_id)
     if not student:
-        raise HTTPException(status_code=404, detail="Profil etudiant introuvable")
+        raise HTTPException(
+            status_code=404,
+            detail="Profil étudiant introuvable : aucun étudiant du service académique n'est associé à cet e-mail",
+        )
     return student
 
 
@@ -37,9 +41,10 @@ def student_overview(
     semester_id: Optional[int] = Query(None),
     x_user_id: Optional[int] = Header(None),
     x_user_role: Optional[str] = Header(None),
+    x_user_email: Optional[str] = Header(None),
     db: Session = Depends(get_db),
 ):
-    student = _student_or_403(db, x_user_id, x_user_role)
+    student = _student_or_403(db, x_user_id, x_user_role, x_user_email)
     today = date.today()
     semester = (
         db.query(models.Semester)

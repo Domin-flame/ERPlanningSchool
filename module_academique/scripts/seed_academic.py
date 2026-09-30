@@ -64,19 +64,36 @@ def run():
         db.add(course)
         db.flush()
 
-        year = AcademicYear(start_date=date(2026, 9, 1), end_date=date(2027, 7, 31), year_label="2026-2027")
+        # Année et semestres calculés à partir de la date du jour : le
+        # catalogue étudiant n'affiche que les offres du semestre en cours,
+        # des dates figées rendraient la démo vide une fois ce semestre passé.
+        today = date.today()
+        first_year = today.year if today.month >= 9 else today.year - 1
+        year = AcademicYear(
+            start_date=date(first_year, 9, 1),
+            end_date=date(first_year + 1, 8, 31),
+            year_label=f"{first_year}-{first_year + 1}",
+        )
         db.add(year)
         db.flush()
 
-        semester = Semester(
+        semester_1 = Semester(
             term_name="Semestre 1",
-            start_date=date(2026, 9, 1),
-            end_date=date(2027, 1, 15),
+            start_date=date(first_year, 9, 1),
+            end_date=date(first_year + 1, 1, 31),
             is_locked=False,
             academic_year_id=year.academic_year_id,
         )
-        db.add(semester)
+        semester_2 = Semester(
+            term_name="Semestre 2",
+            start_date=date(first_year + 1, 2, 1),
+            end_date=date(first_year + 1, 8, 31),
+            is_locked=False,
+            academic_year_id=year.academic_year_id,
+        )
+        db.add_all([semester_1, semester_2])
         db.flush()
+        semester = semester_1 if today <= semester_1.end_date else semester_2
 
         campus = Campus(name="Campus Principal", city="Yaoundé", adress="Rue de l'Université")
         db.add(campus)
@@ -98,7 +115,7 @@ def run():
         db.flush()
         student = Student(
             matricule="ETU2026-001",
-            enrollment_date=date(2026, 9, 1),
+            enrollment_date=year.start_date,
             status="active",
             program_id=program.program_id,
             user_id=student_user.user_id,
@@ -119,7 +136,7 @@ def run():
         db.add(
             Enrollment(
                 status="active",
-                enrollment_date=date(2026, 9, 5),
+                enrollment_date=semester.start_date,
                 student_id=student.student_id,
                 course_offering_id=offering.course_offering_id,
             )

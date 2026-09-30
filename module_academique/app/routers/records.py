@@ -9,7 +9,7 @@ from app.database import get_db
 from app.events import publish_enrollment_created
 from app.routers.offerings import class_schedule_crud, course_offering_crud, exam_crud
 from app.routers.people import student_crud
-from app.authz import assert_owns_enrollment, assert_owns_exam, assert_owns_schedule, assert_owns_session, get_current_teacher
+from app.authz import assert_owns_enrollment, find_student_for_user, assert_owns_exam, assert_owns_schedule, assert_owns_session, get_current_teacher
 
 router = APIRouter(tags=["Academic Records"])
 
@@ -25,7 +25,13 @@ attendance_crud = CRUDBase(models.Attendance, "attendance_id")
 ENROLLMENT_MANAGER_ROLES = {"academic", "professeur"}
 
 
-def _authorize_enrollment(student: models.Student, user_id: Optional[int], role: Optional[str]) -> None:
+def _authorize_enrollment(
+    db: Session,
+    student: models.Student,
+    user_id: Optional[int],
+    role: Optional[str],
+    email: Optional[str] = None,
+) -> None:
     """Contrôle d'accès à la création d'inscription.
 
     Les en-têtes X-User-* sont posés par la gateway à partir du JWT. Un
@@ -37,8 +43,10 @@ def _authorize_enrollment(student: models.Student, user_id: Optional[int], role:
     normalized = role.lower()
     if normalized in ENROLLMENT_MANAGER_ROLES:
         return
-    if normalized == "student" and user_id is not None and student.user_id == user_id:
-        return
+    if normalized == "student":
+        own = find_student_for_user(db, email, user_id)
+        if own is not None and own.student_id == student.student_id:
+            return
     raise HTTPException(status_code=403, detail="Vous ne pouvez inscrire que votre propre profil étudiant")
 
 
@@ -49,11 +57,12 @@ def create_enrollment(
     db: Session = Depends(get_db),
     x_user_id: Optional[int] = Header(None),
     x_user_role: Optional[str] = Header(None),
+    x_user_email: Optional[str] = Header(None),
 ):
     student = student_crud.get(db, payload.student_id)
     if not student:
         raise HTTPException(status_code=404, detail="Étudiant introuvable")
-    _authorize_enrollment(student, x_user_id, x_user_role)
+    _authorize_enrollment(db, student, x_user_id, x_user_role, x_user_email)
     offering = course_offering_crud.get(db, payload.course_offering_id)
     if not offering:
         raise HTTPException(status_code=404, detail="Offre de cours introuvable")

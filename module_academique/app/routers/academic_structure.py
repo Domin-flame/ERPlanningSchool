@@ -253,6 +253,13 @@ def delete_course(course_id: int, db: Session = Depends(get_db)):
     obj = course_crud.get(db, course_id)
     if not obj:
         raise HTTPException(status_code=404, detail="Cours introuvable")
+    if obj.course_offerings:
+        # course_offerings.course_id est NOT NULL : la suppression lèverait
+        # une IntegrityError (500) et effacerait l'historique d'inscriptions.
+        raise HTTPException(
+            status_code=409,
+            detail=f"Impossible de supprimer ce cours : {len(obj.course_offerings)} session(s) y sont rattachées (inscriptions, notes).",
+        )
     course_crud.remove(db, course_id)
 
 

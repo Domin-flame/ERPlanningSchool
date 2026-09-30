@@ -2,7 +2,10 @@ import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { http } from "../api/client.js";
 import {
+  createCourseOffering,
   enrollStudent,
+  fetchOfferingFormOptions,
+  pickDefaultSemester,
   fetchCourses,
   fetchStudentCourseOptions,
   filterCurrentOfferings,
@@ -69,5 +72,44 @@ describe("courseService", () => {
     expect(getCourseErrorMessage({ response: { data: { detail: "Déjà inscrit" } } })).toBe("Déjà inscrit");
     expect(getCourseErrorMessage({ response: { data: { detail: [{ msg: "champ requis" }] } } })).toBe("champ requis");
     expect(getCourseErrorMessage({}, "Erreur")).toBe("Erreur");
+  });
+
+  it("ouvre une offre avec le payload attendu par academic-service", async () => {
+    mock.onPost("/academic/course-offerings/").reply(201, { course_offering_id: 5 });
+
+    await createCourseOffering({ name: "WEB — Groupe A", courseId: 1, semesterId: 2, campusId: 3, teacherId: 4 });
+
+    expect(JSON.parse(mock.history.post[0].data)).toEqual({
+      name: "WEB — Groupe A",
+      course_id: 1,
+      semester_id: 2,
+      campus_id: 3,
+      teacher_id: 4,
+    });
+  });
+
+  it("charge semestres, campus et enseignants nommés", async () => {
+    mock.onGet("/academic/semesters/").reply(200, [{ semester_id: 1 }]);
+    mock.onGet("/academic/campuses/").reply(200, [{ campus_id: 1, name: "Principal" }]);
+    mock.onGet("/academic/teachers/").reply(200, [{ teacher_id: 9, user_id: 7, employee_code: "ENS-1" }]);
+    mock.onGet("/academic/users/").reply(200, [{ user_id: 7, name: "Dr. Awa", email: "prof@campus.edu" }]);
+
+    const options = await fetchOfferingFormOptions();
+
+    expect(options.teachers).toEqual([
+      expect.objectContaining({ teacher_id: 9, name: "Dr. Awa", email: "prof@campus.edu" }),
+    ]);
+    expect(options.campuses).toHaveLength(1);
+  });
+
+  it("propose le semestre en cours, sinon le prochain semestre ouvert", () => {
+    const semesters = [
+      { semester_id: 1, start_date: "2026-02-01", end_date: "2026-08-31", is_locked: false },
+      { semester_id: 2, start_date: "2026-09-01", end_date: "2027-01-31", is_locked: false },
+      { semester_id: 3, start_date: "2027-02-01", end_date: "2027-08-31", is_locked: false },
+    ];
+    expect(pickDefaultSemester(semesters, "2026-09-30").semester_id).toBe(2);
+    expect(pickDefaultSemester(semesters.slice(2), "2026-09-30").semester_id).toBe(3);
+    expect(pickDefaultSemester([{ ...semesters[1], is_locked: true }], "2026-09-30")).toBeNull();
   });
 });
