@@ -98,8 +98,8 @@ export function DataProvider({ children }) {
       );
       tasks.push(safeGet("/finance/students/me/invoices", setInvoices, "invoices"));
     }
-    if (["academic", "professeur"].includes(role)) {
-      tasks.push(safeGet("/academic/students/", setStudents, "students"));
+    if (["academic", "professeur", "rh", "finance"].includes(role)) {
+      tasks.push(safeGet("/academic/students/?limit=200", setStudents, "students"));
     }
     if (["academic", "rh"].includes(role)) {
       tasks.push(safeGet("/hr/employees/", setEmployees, "employees"));
