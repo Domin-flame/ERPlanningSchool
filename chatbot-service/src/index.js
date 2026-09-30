@@ -124,6 +124,17 @@ function validateMessage(message) {
   return null;
 }
 
+// Limite globale par IP, appliquée avant toute vérification du JWT. Large,
+// car derrière la gateway toutes les requêtes partagent la même IP.
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: Number(process.env.CHATBOT_API_RATE_LIMIT_PER_MINUTE) || 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests', detail: 'Trop de requêtes. Réessayez dans une minute.' },
+});
+app.use('/api', apiLimiter);
+
 // Limite par utilisateur (après verifyJWT) : chaque message déclenche un
 // appel payant au fournisseur IA. Complète la limite posée par la gateway
 // pour le cas où le service est joint directement (port exposé).
