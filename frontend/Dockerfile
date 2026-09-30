@@ -2,9 +2,12 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Copier les dépendances puis installer (cache efficace)
+# Copier les dépendances puis installer de manière plus robuste dans CI
+# (npm ci est strict et peut échouer sur des lockfiles non alignés ou des
+# contextes de build légèrement différents, alors que le build front doit
+# simplement installer les dépendances de Vite/React pour produire le bundle.)
 COPY package.json package-lock.json* ./
-RUN npm ci --prefer-offline
+RUN npm install --no-fund --no-audit
 
 # Passer VITE_API_URL comme ARG de build pour que Vite l'intègre dans le bundle
 ARG VITE_API_URL=http://localhost:3000/api
