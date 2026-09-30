@@ -98,6 +98,47 @@ def test_course_offering_creation(client, full_context):
     assert resp.json()["name"] == "SQL avancé - Groupe A"
 
 
+def test_student_can_only_enroll_own_profile(client, full_context):
+    offering = client.post(
+        "/course-offerings/",
+        json={
+            "name": "SQL avancé - Groupe B",
+            "campus_id": full_context["campus"]["campus_id"],
+            "teacher_id": full_context["teacher"]["teacher_id"],
+            "course_id": full_context["course"]["course_id"],
+            "semester_id": full_context["semester"]["semester_id"],
+        },
+    ).json()
+    student = full_context["student"]
+    payload = {
+        "status": "Active",
+        "enrollment_date": "2025-09-05",
+        "student_id": student["student_id"],
+        "course_offering_id": offering["course_offering_id"],
+    }
+
+    other = client.post(
+        "/enrollments/",
+        json=payload,
+        headers={"X-User-ID": str(student["user_id"] + 999), "X-User-Role": "student"},
+    )
+    assert other.status_code == 403
+
+    marketing = client.post(
+        "/enrollments/",
+        json=payload,
+        headers={"X-User-ID": str(student["user_id"]), "X-User-Role": "marketing"},
+    )
+    assert marketing.status_code == 403
+
+    own = client.post(
+        "/enrollments/",
+        json=payload,
+        headers={"X-User-ID": str(student["user_id"]), "X-User-Role": "student"},
+    )
+    assert own.status_code == 201
+
+
 def test_full_academic_flow_enrollment_grade_attendance(client, full_context):
     teacher_headers = {
         "X-User-Role": "teacher",
