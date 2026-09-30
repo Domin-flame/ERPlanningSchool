@@ -44,8 +44,13 @@ export function formatNumber(value, digits = 0) {
   return new Intl.NumberFormat(LOCALE, { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(n);
 }
 
+/** Heure "HH:MM" à partir d'une heure SQL ("08:30:00") ou d'une date ISO complète. */
 export function formatTime(value) {
-  return value ? String(value).slice(0, 5) : "";
+  if (!value) return "";
+  const text = String(value);
+  if (/^\d{1,2}:\d{2}/.test(text)) return text.slice(0, 5);
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleTimeString(LOCALE, { hour: "2-digit", minute: "2-digit" });
 }
 
 export function initials(name = "") {
