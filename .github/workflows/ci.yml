@@ -1,0 +1,132 @@
+name: CI
+
+# Exigence du cahier des charges SEN4121 : « A CI/CD pipeline (...) must
+# automatically run the test suite and build container images on every
+# push to the main branch. »
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Tests unitaires / API des microservices Python ────────────────────
+  python-tests:
+    name: Tests Python — ${{ matrix.service.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - { name: auth,         path: module_authentification }
+          - { name: academic,     path: module_academique }
+          - { name: finance,      path: module_finance_marketing/finance-service }
+          - { name: rh,           path: module_rh }
+          - { name: message,      path: module_message }
+          - { name: notification, path: module_notification }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances (${{ matrix.service.name }})
+        working-directory: ${{ matrix.service.path }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lancer pytest avec couverture (${{ matrix.service.name }})
+        working-directory: ${{ matrix.service.path }}
+        run: |
+          pytest --cov=app --cov-report=term-missing --cov-report=xml -v
+
+      - name: Publier le rapport de couverture (${{ matrix.service.name }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.service.name }}
+          path: ${{ matrix.service.path }}/coverage.xml
+          if-no-files-found: ignore
+
+  # ── Tests de l'API Gateway (Node / Express / Jest / Supertest) ─────────
+  gateway-tests:
+    name: Tests Gateway (Node)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: gateway/package-lock.json
+
+      - name: Installer les dépendances
+        working-directory: gateway
+        run: npm install
+
+      - name: Lancer les tests (Jest + Supertest)
+        working-directory: gateway
+        run: npm test
+
+  # ── Tests du frontend (React / Vitest) ──────────────────────────────────
+  frontend-tests:
+    name: Tests Frontend (React)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances
+        working-directory: frontend
+        run: npm install
+
+      - name: Lancer les tests (Vitest)
+        working-directory: frontend
+        run: npm test
+
+  # ── Construction des images Docker de tous les services ────────────────
+  # Ne construit PAS l'image sur les pull requests venant d'un fork externe
+  # sans secrets ; ici on se contente de valider que chaque Dockerfile
+  # construit correctement (pas de push vers un registre — hors périmètre
+  # du cahier des charges qui demande juste "build container images").
+  docker-build:
+    name: Build image — ${{ matrix.image.name }}
+    runs-on: ubuntu-latest
+    needs: [python-tests, gateway-tests, frontend-tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - { name: auth-service,         context: module_authentification }
+          - { name: academic-service,     context: module_academique }
+          - { name: finance-service,      context: module_finance_marketing/finance-service }
+          - { name: hr-service,           context: module_rh }
+          - { name: message-service,      context: module_message }
+          - { name: notification-service, context: module_notification }
+          - { name: chatbot-service,      context: chatbot-service }
+          - { name: gateway,              context: gateway }
+          - { name: frontend,             context: frontend }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.image.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.image.context }}
+          push: false
+          tags: campusworkflow/${{ matrix.image.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.image.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}
