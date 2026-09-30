@@ -9,6 +9,8 @@ import { authApi } from "../../api/auth.js";
 import { errorMessage, toApiError } from "../../api/errors.js";
 import { useApi } from "../../hooks/useApi.js";
 import { useAuth } from "../../hooks/useAuth.js";
+import { useNotifications } from "../../hooks/useNotifications.js";
+import { useRealtime } from "../../hooks/useRealtime.js";
 import { useToast } from "../../hooks/useToast.js";
 import { roleLabel } from "../../app/roles.js";
 import { formatDateTime, formatRelative, formatTime, matchesQuery } from "../../utils/format.js";
@@ -97,6 +99,8 @@ function NewConversationModal({ onClose, onCreated }) {
   );
 }
 
+const appendUnique = (list, message) => (list.some((m) => m.id === message.id) ? list : [...list, message]);
+
 function Thread({ conversation, me, onChanged, onBack }) {
   const toast = useToast();
   const [messages, setMessages] = useState([]);
@@ -125,6 +129,15 @@ function Thread({ conversation, me, onChanged, onBack }) {
     return () => clearInterval(timer);
   }, [load]);
 
+  // Temps réel : chaque message publié dans la conversation est poussé par
+  // le message-service ; le polling reste un filet de sécurité.
+  const onEvent = useCallback((event) => {
+    if (event?.type !== "new_message" || !event.id) return;
+    setMessages((prev) => appendUnique(prev, event));
+    onChanged();
+  }, [onChanged]);
+  useRealtime(`ws/messages/${encodeURIComponent(conversation.id)}`, { onEvent, onOpen: () => load(true) });
+
   useEffect(() => {
     if (messages.length !== lastCount.current) {
       lastCount.current = messages.length;
@@ -144,7 +157,7 @@ function Thread({ conversation, me, onChanged, onBack }) {
         setEditing(null);
       } else {
         const created = await messagesApi.send(conversation.id, content);
-        setMessages((prev) => [...prev, created]);
+        setMessages((prev) => appendUnique(prev, created));
         onChanged();
       }
       setDraft("");
@@ -224,6 +237,12 @@ export default function MessagesPage() {
     const timer = setInterval(() => document.visibilityState === "visible" && reload(), POLL_MS * 2);
     return () => clearInterval(timer);
   }, [reload]);
+
+  // Une notification « nouveau message » reçue en temps réel rafraîchit la liste.
+  const { version } = useNotifications();
+  useEffect(() => {
+    if (version) reload();
+  }, [version, reload]);
 
   const conversations = useMemo(
     () => [...(data || [])]

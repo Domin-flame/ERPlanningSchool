@@ -82,7 +82,11 @@ src/
 | `/api/finance/*`, `/api/marketing/*` | finance-service (factures, paiements MoMo, leads, campagnes) |
 | `/api/hr/*` | hr-service (employés, congés, paie) |
 | `/api/messages/*` | message-service (conversations, messages) |
-| `/api/notifications/*` | notification-service (lecture, archivage, compteur non lus : interrogé toutes les 60 s) |
+| `/api/notifications/*` | notification-service (lecture, archivage, compteur non lus) |
+| `ws /api/ws/notifications?token=…` | notification-service — push temps réel des nouvelles notifications (badge, toast, liste) |
+| `ws /api/ws/messages/{conversation}?token=…` | message-service — push temps réel des nouveaux messages (participants uniquement) |
 | `/api/services/health`, `/api/chatbot/message` | gateway |
+
+**Temps réel** : `hooks/useRealtime.js` ouvre les WebSockets (reconnexion automatique, ping 25 s). La gateway vérifie le JWT passé en `?token=` et relaie l'upgrade ; nginx (Docker) et Vite (dev) transmettent les en-têtes `Upgrade`. Un polling lent reste actif en secours. Un message envoyé publie un événement RabbitMQ que le notification-service transforme en notification poussée au destinataire.
 
 > **Astuce données vides :** si les écrans affichent « Aucune donnée », vérifiez d'abord que les bases ont été initialisées (définissez `DB_AUTO_SEED=true` dans `.env` avant `docker compose up` ; la valeur par défaut est `false`). Vérifiez aussi que le compte connecté est bien rattaché à un dossier académique (étudiant ou enseignant) portant le même email.

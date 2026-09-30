@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Archive, Bell, CheckCheck, Trash2 } from "lucide-react";
 import { AsyncContent, Badge, Button, Card, EmptyState, IconButton, PageHeader, Tabs } from "../../components/ui";
 import { notificationsApi } from "../../api/notifications.js";
@@ -18,10 +18,15 @@ const FILTERS = {
 
 export default function NotificationsPage() {
   const toast = useToast();
-  const { refreshUnread } = useNotifications();
+  const { refreshUnread, version } = useNotifications();
   const [filter, setFilter] = useState("all");
   const fetcher = useCallback(() => notificationsApi.list({ ...FILTERS[filter], limit: 100 }).then(asList), [filter]);
   const { data, loading, error, reload, setData } = useApi(fetcher, { initialData: [] });
+
+  // Recharge la liste dès qu'une notification arrive en temps réel.
+  useEffect(() => {
+    if (version) reload();
+  }, [version, reload]);
 
   const items = useMemo(
     () => (data || []).filter((n) => (filter === "archived" ? n.archived : true)),

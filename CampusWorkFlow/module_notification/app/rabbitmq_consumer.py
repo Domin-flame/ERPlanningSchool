@@ -29,6 +29,7 @@ import aio_pika
 
 from app.config import EXCHANGE_NAME, QUEUE_NAME, RABBITMQ_URL
 from app.database import SessionLocal
+from app.realtime import broadcast_to_user, notification_event
 from app.models import Notification
 
 logger = logging.getLogger(__name__)
@@ -59,9 +60,14 @@ async def _handle_message(message: aio_pika.IncomingMessage) -> None:
                 )
                 db.add(notif)
                 db.commit()
+                db.refresh(notif)
+                event = notification_event(notif)
                 logger.info("[NOTIF-CONSUMER] Notification créée pour user %s : %s", user_id, title)
             finally:
                 db.close()
+
+            # Push temps réel vers les onglets connectés du destinataire
+            await broadcast_to_user(int(user_id), event)
 
         except Exception as exc:
             logger.error("[NOTIF-CONSUMER] Erreur traitement message : %s", exc)

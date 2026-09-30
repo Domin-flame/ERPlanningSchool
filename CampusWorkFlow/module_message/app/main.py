@@ -5,7 +5,9 @@ import os
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
+from app import models
+from app.auth import decode_token
+from app.database import Base, SessionLocal, engine
 from app.routers import conversations, messages
 
 logger = logging.getLogger(__name__)
@@ -58,12 +60,30 @@ async def broadcast_to_conversation(conversation_id: str, payload: dict) -> None
 app.state.broadcast = broadcast_to_conversation
 
 
+def _is_participant(conversation_id: str, user_id: int) -> bool:
+    db = SessionLocal()
+    try:
+        return db.query(models.ConversationParticipant).filter_by(
+            conversation_id=conversation_id,
+            user_id=user_id,
+        ).first() is not None
+    finally:
+        db.close()
+
+
 @app.websocket("/ws/messages/{conversation_id}")
-async def ws_chat(websocket: WebSocket, conversation_id: str):
+async def ws_chat(websocket: WebSocket, conversation_id: str, token: str | None = None):
     """
     WebSocket pour la messagerie temps réel dans une conversation.
     Les messages envoyés via POST /api/v1/messages/ sont broadcastés ici.
+    Le client transmet son access token (`?token=`) et doit être
+    participant de la conversation.
     """
+    current = decode_token(token)
+    if current is None or current.user_id is None or not _is_participant(conversation_id, current.user_id):
+        await websocket.close(code=1008)
+        return
+
     await websocket.accept()
     _chat_sockets.setdefault(conversation_id, []).append(websocket)
     logger.info("[WS-CHAT] Connexion à la conversation %s", conversation_id)
