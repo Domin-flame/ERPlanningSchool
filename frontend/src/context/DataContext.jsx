@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import api from "../api/client.js";
 import { useAuth } from "./AuthContext.jsx";
+import { registerStudent as registerStudentRequest } from "../services/studentService.js";
 
 const DataContext = createContext();
 
@@ -114,7 +115,7 @@ export function DataProvider({ children }) {
     tasks.push(
       (async () => {
         try {
-          const res = await api.get("/notifications", { params: { limit: 30 } });
+          const res = await api.get("/notifications/", { params: { limit: 30 } });
           const items = res.data?.items ?? res.data ?? [];
           setNotifications(
             items.map((n) => ({
@@ -220,6 +221,18 @@ export function DataProvider({ children }) {
     } catch (err) {
       throw new Error(err.response?.data?.detail || "Impossible d'inscrire l'étudiant");
     }
+  };
+
+  // Inscription complète (utilisateur + dossier) depuis l'écran « Étudiants »
+  const registerStudent = async (form) => {
+    const created = await registerStudentRequest(form);
+    setStudents((prev) => [created, ...prev.filter((s) => s.student_id !== created.student_id)]);
+    addNotificationLocal({
+      title: "Nouvel étudiant inscrit",
+      desc: `${created.name || form.name} (${created.matricule}) a été enregistré.`,
+      type: "student",
+    });
+    return created;
   };
 
   const updateStudentStatus = async (id, newStatus) => {
@@ -411,6 +424,7 @@ export function DataProvider({ children }) {
         deleteCourse,
         students,
         addStudent,
+        registerStudent,
         updateStudentStatus,
         deleteStudent,
         employees,

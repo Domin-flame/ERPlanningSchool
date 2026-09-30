@@ -62,10 +62,13 @@ app.use('/api/', limiter);
 // Limiteur dédié, plus strict, sur les endpoints d'authentification
 // sensibles (login / register / reset) pour ralentir le credential
 // stuffing et le brute force de mots de passe, indépendamment du quota
-// global de l'API.
+// global de l'API. Seules les tentatives en échec sont comptées : sinon
+// quelques connexions légitimes (ou un académique qui crée les comptes de
+// plusieurs étudiants) suffisaient à bloquer tout le monde derrière la même IP.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 10,
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   message: { detail: 'Trop de tentatives de connexion. Réessayez dans 15 minutes.' },
@@ -158,7 +161,10 @@ function rbacGuard(req, res, next) {
 }
 
 async function messageConversationGuard(req, res, next) {
-  if (req.method !== 'POST' || !req.user) return next();
+  // Ne contrôle que la création de conversation (choix des destinataires) :
+  // l'envoi d'un message dans une conversation existante (POST /messages/)
+  // ne porte pas de participant_ids et est vérifié par message-service.
+  if (req.method !== 'POST' || !req.user || !/^\/conversations\/?$/.test(req.path)) return next();
   const participantIds = req.body?.participant_ids;
   if (!Array.isArray(participantIds) || participantIds.length === 0) {
     return res.status(400).json({ detail: 'Au moins un destinataire est requis' });

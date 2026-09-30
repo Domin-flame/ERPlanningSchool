@@ -116,7 +116,7 @@ def run():
         student = Student(
             matricule="ETU2026-001",
             enrollment_date=year.start_date,
-            status="active",
+            status="ACTIVE",
             program_id=program.program_id,
             user_id=student_user.user_id,
         )

@@ -107,6 +107,11 @@ a:hover {
   top: 0;
 
   height: 100vh;
+
+  /* Menus longs (profil académique) : sans défilement, les derniers liens
+     (Analytics, Paramètres) sortaient de l'écran et étaient inaccessibles. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .brand {

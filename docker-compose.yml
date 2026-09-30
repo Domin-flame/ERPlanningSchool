@@ -336,6 +336,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-campus_rabbit}:${RABBITMQ_PASS:-rabbit_pass}@rabbitmq:5672/
       NOTIFICATION_SERVICE_URL: http://notification-service:8006
+      # Identité étudiant (X-User-Email → id_student) pour /students/me/invoices
+      ACADEMIC_SERVICE_URL: http://academic-service:8002
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://gateway:3000,http://localhost:5173}
     depends_on:
       finance-db:

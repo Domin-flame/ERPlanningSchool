@@ -182,3 +182,35 @@ describe('Routes inconnues', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('Rate limiting authentification', () => {
+  it('compte les tentatives en échec et finit par bloquer (anti brute force)', async () => {
+    const statuses = [];
+    for (let i = 0; i < 12; i += 1) {
+      const res = await request(app).post('/api/auth/login').send({ email: 'x@y.z', password: 'bad' });
+      statuses.push(res.status);
+    }
+    // Backend auth absent → réponses en échec (5xx) comptabilisées → 429.
+    expect(statuses).toContain(429);
+  });
+});
+
+describe('Messagerie (messageConversationGuard)', () => {
+  const auth = (role) => `Bearer ${token(role)}`;
+
+  it('exige des destinataires pour créer une conversation', async () => {
+    const res = await request(app)
+      .post('/api/messages/conversations/')
+      .set('Authorization', auth('student'))
+      .send({ name: 'Test' });
+    expect(res.status).toBe(400);
+  });
+
+  it("n'exige pas de destinataires pour envoyer un message dans une conversation", async () => {
+    const res = await request(app)
+      .post('/api/messages/messages/')
+      .set('Authorization', auth('student'))
+      .send({ conversation_id: 'abc', content: 'Bonjour' });
+    expect(res.status).not.toBe(400);
+  });
+});

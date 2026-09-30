@@ -22,6 +22,7 @@ from .models import (
     StudentRef,
 )
 from .rabbitmq import start_consumer
+from .identity import resolve_student_id
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -199,25 +200,32 @@ def get_invoice(invoice_id: int, session: Session = Depends(get_session_with_aut
     return {"invoice": invoice, "lignes": lignes}
 
 
-@app.get("/students/{student_id}/invoices", tags=["invoices"])
-def list_invoices_for_student(student_id: int, session: Session = Depends(get_session_with_auth)):
-    """Utile pour la démo Semaine 2/3 : EXPLAIN ANALYZE tourne sur idx_invoice_student."""
-    return session.exec(select(Invoice).where(Invoice.id_student == student_id)).all()
-
-
+# Déclarée AVANT /students/{student_id}/invoices : sinon « me » est capturé
+# par le paramètre entier et la route répond 422.
 @app.get("/students/me/invoices", tags=["invoices"])
 def list_my_invoices(
     x_user_id: Optional[int] = Header(None),
     x_user_role: Optional[str] = Header(None),
+    x_user_email: Optional[str] = Header(None),
     session: Session = Depends(get_session_with_auth),
 ):
-    """Expose uniquement les factures de l'etudiant authentifie."""
-    if (x_user_role or "").lower() != "student" or not x_user_id:
-        raise HTTPException(403, "Acces reserve aux etudiants")
-    student = session.exec(select(StudentRef).where(StudentRef.id_person == x_user_id)).first()
-    if not student:
-        return []
-    return session.exec(select(Invoice).where(Invoice.id_student == student.id_student)).all()
+    """Expose uniquement les factures de l'étudiant authentifié."""
+    if (x_user_role or "").lower() != "student" or not (x_user_id or x_user_email):
+        raise HTTPException(403, "Accès réservé aux étudiants")
+    student_id = resolve_student_id(x_user_email, x_user_id)
+    if student_id is None:
+        # Repli historique : cache alimenté avec le même identifiant de personne.
+        student = session.exec(select(StudentRef).where(StudentRef.id_person == x_user_id)).first() if x_user_id else None
+        if not student:
+            return []
+        student_id = student.id_student
+    return session.exec(select(Invoice).where(Invoice.id_student == student_id)).all()
+
+
+@app.get("/students/{student_id}/invoices", tags=["invoices"])
+def list_invoices_for_student(student_id: int, session: Session = Depends(get_session_with_auth)):
+    """Utile pour la démo Semaine 2/3 : EXPLAIN ANALYZE tourne sur idx_invoice_student."""
+    return session.exec(select(Invoice).where(Invoice.id_student == student_id)).all()
 
 
 # ---------------------------------------------------------------------------
